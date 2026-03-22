@@ -21,6 +21,7 @@ interface StoreState {
   toggleItem: (itemId: string, completed: boolean) => Promise<void>
   updateBlockTitle: (blockId: string, title: string) => Promise<void>
   deleteCourse: (id: string) => Promise<void>
+  deleteDayBlock: (courseId: string, blockId: string) => Promise<void>
 }
 
 const StoreContext = React.createContext<StoreState | undefined>(undefined)
@@ -97,6 +98,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       [courseId]: [...(prev[courseId] || []), newBlock]
     }))
     return newBlock
+  }, [])
+  const deleteDayBlock = React.useCallback(async (courseId: string, blockId: string) => {
+    setCourseDetails(prev => {
+      const next = { ...prev }
+      const blocks = next[courseId] || []
+      const updatedBlocks = blocks.filter(b => b.id !== blockId)
+      next[courseId] = updatedBlocks
+      
+      // Calculate new progress
+      setCourses(coursesPrev => coursesPrev.map(c => {
+        if (c.id === courseId) {
+          let total = 0
+          let completed = 0
+          updatedBlocks.forEach(b => {
+            total += b.items.length
+            completed += b.items.filter(i => i.completed).length
+          })
+          const progress = total === 0 ? 0 : Math.round((completed / total) * 100)
+          return { ...c, totalVideos: total, completedVideos: completed, progress }
+        }
+        return c
+      }))
+      
+      return next
+    })
   }, [])
 
   const addItemsToBlock = React.useCallback(async (blockId: string, items: { title: string; duration: string }[]) => {
@@ -207,7 +233,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addCourse, updateCourseBlocks,
       fetchCourses, fetchCourseDetail,
       addDayBlock, addItemsToBlock, toggleItem, updateBlockTitle,
-      deleteCourse
+      deleteCourse, deleteDayBlock
     }}>
       {children}
     </StoreContext.Provider>

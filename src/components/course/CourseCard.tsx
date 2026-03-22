@@ -5,7 +5,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
-import { BookOpen, Clock } from "lucide-react"
+import { BookOpen, Clock, Trash2 } from "lucide-react"
+import { useStore } from "@/lib/store"
 
 export interface CourseData {
   id: string
@@ -23,6 +24,16 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course }: CourseCardProps) {
+  const { deleteCourse } = useStore()
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (confirm(`Are you sure you want to delete "${course.title}"?`)) {
+      deleteCourse(course.id)
+    }
+  }
+
   return (
     <Link href={`/course/${course.id}`}>
       <motion.div
@@ -44,6 +55,15 @@ export function CourseCard({ course }: CourseCardProps) {
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+            
+            {course.ownership !== 'shared' && (
+              <button
+                onClick={handleDelete}
+                className="absolute top-3 right-3 p-2 rounded-xl bg-black/40 border border-white/10 text-white/40 hover:text-primary hover:bg-black/60 hover:border-primary/30 transition-all opacity-0 group-hover:opacity-100 z-20 backdrop-blur-sm"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <CardContent className="p-5 relative">

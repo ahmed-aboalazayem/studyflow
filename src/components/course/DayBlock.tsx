@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Edit2, Play, CheckCircle2, Clock } from "lucide-react"
+import { Plus, Edit2, Play, CheckCircle2, Clock, Trash2 } from "lucide-react"
+import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ChecklistItem, type ChecklistItemData } from "./ChecklistItem"
@@ -41,6 +42,10 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
   const [isPasting, setIsPasting] = React.useState(false)
   const [pasteText, setPasteText] = React.useState("")
 
+  const { updateBlockTitle, addItemsToBlock, toggleItem: storeToggleItem, deleteDayBlock } = useStore()
+  const params = useParams()
+  const courseId = params.id as string
+
   const titleInputRef = React.useRef<HTMLInputElement>(null)
 
   React.useEffect(() => {
@@ -49,7 +54,11 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
     }
   }, [isEditingTitle])
 
-  const { updateBlockTitle, addItemsToBlock, toggleItem: storeToggleItem } = useStore()
+  const handleDeleteBlock = async () => {
+    if (confirm(`Are you sure you want to delete "${block.title}"?`)) {
+      await deleteDayBlock(courseId, block.id)
+    }
+  }
 
   const handleTitleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -132,6 +141,13 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
                   className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10 text-foreground/60 hover:text-white"
                 >
                   <Edit2 className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={handleDeleteBlock}
+                  className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground/40 hover:text-red-500"
+                  title="Delete Day"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             )}
