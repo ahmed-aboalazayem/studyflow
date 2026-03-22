@@ -35,7 +35,7 @@ export default function AddCoursePage() {
       totalVideos: 0,
       completedVideos: 0
     }
-    const result: any = await addCourse(newCourse, [])
+    const result: any = await addCourse(newCourse)
     router.push(`/course/${result?.id || newCourse.id}`)
   }
 
