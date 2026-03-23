@@ -3,10 +3,16 @@
 import * as React from "react"
 import type { CourseData } from "@/components/course/CourseCard"
 import type { DayBlockData } from "@/components/course/DayBlock"
-
-// Storage Keys
-const COURSES_KEY = 'studyflow_courses'
-const COURSE_DETAILS_KEY = 'studyflow_course_details'
+import { 
+  getCourses, 
+  addCourse as addCourseAction, 
+  deleteCourse as deleteCourseAction,
+  addDayBlock as addDayBlockAction,
+  deleteDayBlock as deleteDayBlockAction,
+  addItemsToBlock as addItemsToBlockAction,
+  toggleItem as toggleItemAction,
+  updateBlockTitle as updateBlockTitleAction
+} from "@/app/actions"
 
 interface StoreState {
   courses: CourseData[]
@@ -31,201 +37,103 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [courseDetails, setCourseDetails] = React.useState<Record<string, DayBlockData[]>>({})
   const [isLoaded, setIsLoaded] = React.useState(false)
 
-  // Load initial data from localStorage
-  React.useEffect(() => {
-    const storedCourses = localStorage.getItem(COURSES_KEY)
-    const storedDetails = localStorage.getItem(COURSE_DETAILS_KEY)
-
-    if (storedCourses) {
-      setCourses(JSON.parse(storedCourses))
-    }
-    if (storedDetails) {
-      setCourseDetails(JSON.parse(storedDetails))
-    }
-    setIsLoaded(true)
-  }, [])
-
-  // Sync to localStorage
-  React.useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(COURSES_KEY, JSON.stringify(courses))
-      localStorage.setItem(COURSE_DETAILS_KEY, JSON.stringify(courseDetails))
-    }
-  }, [courses, courseDetails, isLoaded])
-
   const fetchCourses = React.useCallback(async () => {
-    // Already loaded in useEffect, but we keep the signature
+    const data = await getCourses()
+    // Transform Prisma data to Store state
+    const mappedCourses: CourseData[] = data.map((c: any) => ({
+      id: c.id,
+      title: c.title,
+      imageUrl: c.imageUrl,
+      progress: c.progress,
+      totalVideos: c.totalVideos,
+      completedVideos: c.completedVideos,
+      ownership: c.ownership as any,
+      ownerName: c.ownerName
+    }))
+    
+    const details: Record<string, DayBlockData[]> = {}
+    data.forEach((c: any) => {
+      details[c.id] = c.dayBlocks.map((b: any) => ({
+        id: b.id,
+        title: b.title,
+        items: b.items.map((i: any) => ({
+          id: i.id,
+          title: i.title,
+          duration: i.duration,
+          completed: i.progress && i.progress.length > 0 ? i.progress[0].completed : false,
+          updatedAt: i.updatedAt,
+          progress: i.progress
+        }))
+      }))
+    })
+
+    setCourses(mappedCourses)
+    setCourseDetails(details)
     setIsLoaded(true)
   }, [])
+
+  // Initial load
+  React.useEffect(() => {
+    fetchCourses()
+  }, [fetchCourses])
 
   const fetchCourseDetail = React.useCallback(async (courseId: string) => {
-    // Already loaded in useEffect
+    // Already loaded in fetchCourses for now as it fetches the graph
   }, [])
 
   const addCourse = React.useCallback(async (course: Partial<CourseData>) => {
-    const newCourse: CourseData = {
-      id: `course-${Date.now()}`,
+    const result = await addCourseAction({
       title: course.title || 'Untitled Course',
-      imageUrl: course.imageUrl || '',
-      progress: 0,
-      totalVideos: 0,
-      completedVideos: 0,
-      ownership: 'owned' as const,
-      ownerName: 'Guest'
-    }
-    setCourses(prev => [newCourse, ...prev])
-    setCourseDetails(prev => ({ ...prev, [newCourse.id]: [] }))
-    return newCourse
-  }, [])
+      imageUrl: course.imageUrl || ''
+    })
+    
+    if ('error' in result) throw new Error(result.error)
+    
+    await fetchCourses()
+    return result as any
+  }, [fetchCourses])
 
   const deleteCourse = React.useCallback(async (id: string) => {
-    setCourses(prev => prev.filter(c => c.id !== id))
-    setCourseDetails(prev => {
-      const newDetails = { ...prev }
-      delete newDetails[id]
-      return newDetails
-    })
-  }, [])
+    await deleteCourseAction(id)
+    await fetchCourses()
+  }, [fetchCourses])
 
   const addDayBlock = React.useCallback(async (courseId: string, title: string) => {
-    const newBlock: DayBlockData = {
-      id: `block-${Date.now()}`,
-      title,
-      items: []
-    }
-    setCourseDetails(prev => ({
-      ...prev,
-      [courseId]: [...(prev[courseId] || []), newBlock]
-    }))
-    return newBlock
-  }, [])
+    const result = await addDayBlockAction(courseId, title)
+    if ('error' in result) throw new Error(result.error)
+    
+    await fetchCourses()
+    return result as any
+  }, [fetchCourses])
+
   const deleteDayBlock = React.useCallback(async (courseId: string, blockId: string) => {
-    setCourseDetails(prev => {
-      const next = { ...prev }
-      const blocks = next[courseId] || []
-      const updatedBlocks = blocks.filter(b => b.id !== blockId)
-      next[courseId] = updatedBlocks
-      
-      // Calculate new progress
-      setCourses(coursesPrev => coursesPrev.map(c => {
-        if (c.id === courseId) {
-          let total = 0
-          let completed = 0
-          updatedBlocks.forEach(b => {
-            total += b.items.length
-            completed += b.items.filter(i => i.completed).length
-          })
-          const progress = total === 0 ? 0 : Math.round((completed / total) * 100)
-          return { ...c, totalVideos: total, completedVideos: completed, progress }
-        }
-        return c
-      }))
-      
-      return next
-    })
-  }, [])
+    await deleteDayBlockAction(courseId, blockId)
+    await fetchCourses()
+  }, [fetchCourses])
 
   const addItemsToBlock = React.useCallback(async (blockId: string, items: { title: string; duration: string }[]) => {
-    let newItemsWithId: any[] = []
-    setCourseDetails(prev => {
-      const next = { ...prev }
-      for (const courseId in next) {
-        const blocks = next[courseId]
-        const blockIndex = blocks.findIndex(b => b.id === blockId)
-        if (blockIndex !== -1) {
-          const updatedBlocks = [...blocks]
-          newItemsWithId = items.map((it, idx) => ({
-            id: `item-${Date.now()}-${idx}`,
-            title: it.title,
-            duration: it.duration,
-            completed: false
-          }))
-          updatedBlocks[blockIndex] = {
-            ...updatedBlocks[blockIndex],
-            items: [...updatedBlocks[blockIndex].items, ...newItemsWithId]
-          }
-          next[courseId] = updatedBlocks
-          break
-        }
-      }
-      return next
-    })
-    return newItemsWithId
-  }, [])
+    const result = await addItemsToBlockAction(blockId, items)
+    if ('error' in result) throw new Error(result.error)
+    
+    await fetchCourses()
+    return result
+  }, [fetchCourses])
 
   const toggleItem = React.useCallback(async (itemId: string, completed: boolean) => {
-    setCourseDetails(prev => {
-      const next = { ...prev }
-      let foundCourseId = ''
-      for (const courseId in next) {
-        const blocks = next[courseId]
-        const updatedBlocks = blocks.map(block => {
-          const itemIndex = block.items.findIndex(i => i.id === itemId)
-          if (itemIndex !== -1) {
-            foundCourseId = courseId
-            const updatedItems = [...block.items]
-            updatedItems[itemIndex] = { ...updatedItems[itemIndex], completed }
-            return { ...block, items: updatedItems }
-          }
-          return block
-        })
-        next[courseId] = updatedBlocks
-      }
-
-      // Update course progress if found
-      if (foundCourseId) {
-        setCourses(coursesPrev => coursesPrev.map(c => {
-          if (c.id === foundCourseId) {
-            let total = 0
-            let completedCount = 0
-            next[foundCourseId].forEach(b => {
-              total += b.items.length
-              completedCount += b.items.filter(i => i.completed).length
-            })
-            const progress = total === 0 ? 0 : Math.round((completedCount / total) * 100)
-            return { ...c, totalVideos: total, completedVideos: completedCount, progress }
-          }
-          return c
-        }))
-      }
-      
-      return next
-    })
-  }, [])
+    await toggleItemAction(itemId, completed)
+    await fetchCourses()
+  }, [fetchCourses])
 
   const updateBlockTitle = React.useCallback(async (blockId: string, title: string) => {
-    setCourseDetails(prev => {
-      const next = { ...prev }
-      for (const courseId in next) {
-        const blocks = next[courseId]
-        const blockIndex = blocks.findIndex(b => b.id === blockId)
-        if (blockIndex !== -1) {
-          const updatedBlocks = [...blocks]
-          updatedBlocks[blockIndex] = { ...updatedBlocks[blockIndex], title }
-          next[courseId] = updatedBlocks
-          break
-        }
-      }
-      return next
-    })
-  }, [])
+    await updateBlockTitleAction(blockId, title)
+    await fetchCourses()
+  }, [fetchCourses])
 
   const updateCourseBlocks = React.useCallback((courseId: string, blocks: DayBlockData[]) => {
-    setCourseDetails(prev => ({ ...prev, [courseId]: blocks }))
-    setCourses(prev => prev.map(c => {
-      if (c.id === courseId) {
-        let total = 0
-        let completed = 0
-        blocks.forEach(b => {
-          total += b.items.length
-          completed += b.items.filter(i => i.completed).length
-        })
-        const progress = total === 0 ? 0 : Math.round((completed / total) * 100)
-        return { ...c, totalVideos: total, completedVideos: completed, progress }
-      }
-      return c
-    }))
-  }, [])
+    // This was mostly used for local UI updates, but with DB we should ideally 
+    // have a proper sort order mutation. For now, we refresh from DB.
+    fetchCourses()
+  }, [fetchCourses])
 
   return (
     <StoreContext.Provider value={{
@@ -245,4 +153,5 @@ export function useStore() {
   if (!context) throw new Error("useStore must be used within StoreProvider")
   return context
 }
+
 

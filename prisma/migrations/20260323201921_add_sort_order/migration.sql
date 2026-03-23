@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "DayBlock" ADD COLUMN     "sortOrder" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Item" ADD COLUMN     "sortOrder" INTEGER NOT NULL DEFAULT 0;

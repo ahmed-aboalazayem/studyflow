@@ -27,16 +27,12 @@ export default function AddCoursePage() {
 
   const handleCreateCourse = async () => {
     if (!title.trim()) return
-    const newCourse = {
-      id: `course-${Date.now()}`,
-      title,
-      imageUrl,
-      progress: 0,
-      totalVideos: 0,
-      completedVideos: 0
+    try {
+      const result: any = await addCourse({ title, imageUrl })
+      router.push(`/course/${result.id}`)
+    } catch (error) {
+      console.error("Failed to create course:", error)
     }
-    const result: any = await addCourse(newCourse)
-    router.push(`/course/${result?.id || newCourse.id}`)
   }
 
   const handleDragOver = (e: React.DragEvent) => {

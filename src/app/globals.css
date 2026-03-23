@@ -1,34 +1,86 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #030303; /* deeper black */
-  --color-foreground: #fafafa;
-  
-  --color-card: rgba(255, 255, 255, 0.02);
-  --color-card-border: rgba(255, 255, 255, 0.05);
-  --color-card-hover: rgba(255, 0, 0, 0.05);
+  /* =========================
+     🎨 Core Colors
+  ========================= */
+  --color-background: #020202; /* deeper cinematic black */
+  --color-foreground: #f5f5f5;
 
-  --color-primary: #ff1f1f; /* vibrant red */
+  --color-muted: #a1a1a1;
+
+  /* =========================
+     🟥 Brand Colors
+  ========================= */
+  --color-primary: #ff1a1a; /* strong neon red */
   --color-primary-foreground: #ffffff;
-  --color-accent: #ff4d4d; /* lighter red */
+  --color-accent: #ff4b4b;
 
+  --color-danger: #ff0033;
+  --color-warning: #ffb020;
+  --color-success: #22c55e;
+
+  /* =========================
+     🪟 UI Surfaces
+  ========================= */
+  --color-card: rgba(255, 255, 255, 0.03);
+  --color-card-hover: rgba(255, 0, 0, 0.06);
+  --color-card-border: rgba(255, 255, 255, 0.08);
+
+  --color-glass: rgba(255, 255, 255, 0.04);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+
+  /* =========================
+     ✍️ Typography
+  ========================= */
   --font-sans: var(--font-inter);
-  
+
+  /* =========================
+     ✨ Effects
+  ========================= */
+  --shadow-glow: 0 0 25px rgba(255, 31, 31, 0.25);
+  --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.6);
+
+  --blur-glass: 14px;
+
+  /* =========================
+     ⚡ Animations
+  ========================= */
   --animate-pulse-slow: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow: glow 2.5s ease-in-out infinite;
 }
+
+/* =========================
+   🎞️ Keyframes
+========================= */
 
 @keyframes pulse-slow {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.1); }
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 31, 31, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(255, 31, 31, 0.5); }
+}
+
+/* =========================
+   🌍 Base Styles
+========================= */
+
 :root {
-  --background: #030303;
-  --foreground: #fafafa;
+  --background: #020202;
+  --foreground: #f5f5f5;
 }
 
 body {
-  background-color: var(--background);
+  background: radial-gradient(circle at top, #0a0a0a 0%, #020202 60%);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -36,28 +88,80 @@ body {
   overflow-x: hidden;
 }
 
-/* Premium Utilities */
+/* =========================
+   💎 Premium Glass System
+========================= */
+
 .glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border: 1px solid var(--color-glass-border);
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s ease;
 }
 
-.glass-hover:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 31, 31, 0.3);
+.glass:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 31, 31, 0.25);
+  box-shadow: var(--shadow-glow);
 }
+
+/* =========================
+   🔥 Buttons / Interactions
+========================= */
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff1a1a, #ff4b4b);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 12px;
+  transition: 0.3s ease;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 40px rgba(255, 31, 31, 0.35);
+}
+
+.btn-outline {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--foreground);
+  background: transparent;
+  transition: 0.3s ease;
+}
+
+.btn-outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* =========================
+   ✨ Text Effects
+========================= */
 
 .text-gradient {
-  background: linear-gradient(135deg, #fff 0%, #ff1f1f 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #ff1a1a 60%, #ff4b4b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
+.text-glow {
+  text-shadow: 0 0 20px rgba(255, 31, 31, 0.4);
+}
+
+/* =========================
+   🌌 Background Effects
+========================= */
+
 .radial-glow {
-  background: radial-gradient(circle at center, rgba(255, 31, 31, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(255, 31, 31, 0.18) 0%, transparent 70%);
+}
+
+.grid-bg {
+  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 

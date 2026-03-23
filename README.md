@@ -1,40 +1,59 @@
 # StudyFlow 🚀
 
+### *The Ultimate Space-Themed Course Planner*
+
 <div align="center">
-  <img src="https://img.shields.io/badge/Next.js-16.2.0-black?style=for-the-badge&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-19.0.0-blue?style=for-the-badge&logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS" />
-  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" />
+  <img src="public/images/hero.png" alt="StudyFlow Hero" width="100%" />
 </div>
+
+<br />
+
+StudyFlow is a premium, high-performance learning management tool designed for modern students and lifelong learners. It transforms your study routine into a visually stunning experience with its unique space-themed interface, glassmorphism UI, and smooth animations.
 
 ---
 
-### StudyFlow is a high-performance, visually stunning learning management tool designed to help you track your progress through any course or playlist. Built with the latest web technologies, it offers a seamless experience with glassmorphism UI and smooth animations.
-
 ## ✨ Key Features
 
-- **📂 Course Management**: Organize your learning by adding multiple courses with custom thumbnails.
-- **📈 Progress Tracking**: Visual progress bars and completion percentages for every course and day.
-- **📅 Day-by-Day Planning**: Break down complex courses into manageable daily bite-sized lessons.
-- **⚡ Bulk Import**: Quickly generate lesson checklists by pasting your syllabus or video titles.
-- **🗑️ Full Control**: Easily add or remove courses and specific days as your learning path evolves.
-- **🎨 Premium UI**: Modern glassmorphic design with custom background effects and Framer Motion animations.
+### 🌌 Immersive Space Theme
+Experience a cosmic study environment with dynamic nebulas, glowing red accents, and subtle starfield effects that bring your dashboard to life.
 
-## 🛠 Tech Stack
+### 📋 Course Management
+- **Organize Naturally**: Group your learning by course or subject.
+- **Custom Thumbnails**: Personalize every course with its own image.
+- **Daily Roadmaps**: Break down courses into manageable daily lesson blocks.
 
-- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
-- **UI Library**: [React 19](https://react.dev/)
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **State Management**: React Context + LocalStorage Persistence
+### 📈 Progress Tracking
+- **Radial Completion Stats**: At-a-glance circular progress indicators for every course.
+- **Micro-Progress tracking**: Mark individual lessons as completed and see your percentage climb in real-time.
+- **Dynamic Skeletons**: Enjoy seamless transitions with route-specific skeleton loaders that match every page's layout perfectly.
 
-## 🚀 Getting Started
+### 🏆 Competition Hub
+- **Leaderboards**: Compete with friends or fellow students to see who's leading the study streak.
+- **Shared Courses**: Collaborate and track progress together on shared learning paths.
+
+### 🛠️ Developer-Centric Profile
+- **Global Settings**: Customize your identity with a variety of futuristic avatars.
+- **Social Integration**: Connect with the developer through a modern, glassmorphic space footer.
+
+---
+
+## 🚀 Technical Highlights
+
+- **Next.js 16 (App Router)**: Utilizing React Server Components and optimized routing.
+- **Tailwind CSS 4**: Cutting-edge utility-first styling for maximum performance and modern aesthetics.
+- **Framer Motion**: Fluid, physics-based animations and transitions throughout the entire UI.
+- **Lucide Icons**: Crisp, professional iconography for a premium look and feel.
+- **Responsive Design**: Flawless experience across mobile, tablet, and desktop devices.
+- **Skeleton Loading**: Precision-engineered placeholders for zero-layout-shift navigation.
+
+---
+
+## 🛠 Getting Started
 
 ### Prerequisites
 
 - Node.js 18.x or later
-- npm or yarn
+- npm (or your preferred package manager)
 
 ### Installation
 
@@ -49,32 +68,55 @@
    npm install
    ```
 
-3. **Run the development server**
+3. **Database Setup**
+   The project uses Prisma ORM. Ensure your environment is ready:
+   ```bash
+   npx prisma generate
+   ```
+
+4. **Run the development server**
    ```bash
    npm run dev
    ```
 
-4. **Open the app**
-   Navigate to [http://localhost:3000](http://localhost:3000) to see the result.
+5. **Open the app**
+   Navigate to [http://localhost:3000](http://localhost:3000) to start your journey.
+
+---
 
 ## 📖 Project Structure
 
 ```text
 src/
-├── app/            # Next.js App Router pages and layouts
-├── components/      # Reusable UI and Course-specific components
-│   ├── ui/         # Base UI components (Button, Input, Card, etc.)
-│   └── course/     # Specialized course management components
-├── lib/            # Utility functions and state storage
-└── public/         # Static assets and images
+├── app/            # Next.js App Router (pages, layouts, loaders)
+├── components/      # Reusable UI & Layout components
+│   ├── ui/         # Base atoms (Button, Input, Card, Modal)
+│   ├── layout/     # Header, Footer
+│   └── course/     # Specialized educational components
+├── lib/            # Shared logic (Prisma, Auth, State Management)
+└── public/         # Global assets (Images, Thumbnails)
 ```
 
-## 🤝 Contributing
+---
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/ahmed-aboalazayem/studyflow/issues).
+## 👨‍💻 Developed By
+
+**Ahmed Aboalazayem**
+*Full-Stack Developer & UI/UX Enthusiast*
+
+Feel free to connect or reach out for collaboration!
+
+<div align="center">
+  <br />
+  <a href="https://linkedin.com/in/ahmed-aboalazayem-664562326"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/ahmed-aboalazayem"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+  &nbsp;&nbsp;
+  <a href="mailto:ahmedaboalazayem1@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" /></a>
+</div>
 
 ---
 
 <p align="center">
-  Built with ❤️ by <a href="https://github.com/ahmed-aboalazayem">Ahmed Aboalazayem</a>
+  <i>"Success is the sum of small efforts, repeated day in and day out."</i>
 </p>

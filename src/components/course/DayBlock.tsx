@@ -7,8 +7,9 @@ import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ChecklistItem, type ChecklistItemData } from "./ChecklistItem"
-import { parseDurationToSeconds, formatSecondsToDuration } from "@/lib/utils"
+import { formatSecondsToDuration, parseDurationToSeconds } from "@/lib/utils"
 import { useStore } from "@/lib/store"
+import { Modal } from "@/components/ui/Modal"
 
 export interface DayBlockData {
   id: string
@@ -41,6 +42,7 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
   const [titleInput, setTitleInput] = React.useState(block.title)
   const [isPasting, setIsPasting] = React.useState(false)
   const [pasteText, setPasteText] = React.useState("")
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false)
 
   const { updateBlockTitle, addItemsToBlock, toggleItem: storeToggleItem, deleteDayBlock } = useStore()
   const params = useParams()
@@ -55,9 +57,12 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
   }, [isEditingTitle])
 
   const handleDeleteBlock = async () => {
-    if (confirm(`Are you sure you want to delete "${block.title}"?`)) {
-      await deleteDayBlock(courseId, block.id)
-    }
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    await deleteDayBlock(courseId, block.id)
+    setShowDeleteModal(false)
   }
 
   const handleTitleSubmit = async (e?: React.FormEvent) => {
@@ -181,7 +186,7 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
 
         {/* Items List */}
         <div className="space-y-3 mb-6">
-          <AnimatePresence>
+          <AnimatePresence mode="popLayout">
             {block.items.map((item, index) => (
               <ChecklistItem 
                 key={item.id} 
@@ -225,6 +230,16 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
           </Button>
         )}
       </div>
+
+      <Modal 
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Day?"
+        description={`Are you sure you want to delete "${block.title}"? This will remove all videos in this day. This action cannot be undone.`}
+        type="error"
+        actionText="Delete Day"
+        onAction={confirmDelete}
+      />
     </Card>
   )
 }

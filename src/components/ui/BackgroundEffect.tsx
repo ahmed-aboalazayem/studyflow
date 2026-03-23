@@ -69,8 +69,8 @@ export const BackgroundEffect: React.FC = () => {
         ref={canvasRef}
         className="absolute inset-0 opacity-40"
       />
-      {/* Central Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] animate-pulse-slow pointer-events-none" />
+      {/* Subtle background glow - removed central intense glow to avoid cluttering UI elements */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
       
       {/* Subtle bottom glow */}
       <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-[80%] h-[300px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />

@@ -9,6 +9,7 @@ import { CourseCard } from "@/components/course/CourseCard"
 import { useStore } from "@/lib/store"
 import { useAuth } from "@/lib/auth-context"
 import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
+import { LoadingState } from "@/components/ui/LoadingState"
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -26,6 +27,17 @@ export default function Home() {
 
   const ownedCourses = filteredCourses.filter((c: any) => c.ownership !== 'shared')
   const sharedCourses = filteredCourses.filter((c: any) => c.ownership === 'shared')
+
+  if (!isLoaded || isLoading) {
+    return (
+      <main className="relative min-h-screen">
+        <BackgroundEffect />
+        <div className="container mx-auto px-4 py-12 relative z-10">
+          <LoadingState />
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="relative min-h-screen">

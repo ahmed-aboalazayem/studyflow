@@ -9,6 +9,8 @@ export interface ChecklistItemData {
   title: string
   duration: string
   completed: boolean
+  updatedAt?: string
+  progress?: { completed: boolean }[]
 }
 
 interface ChecklistItemProps {
@@ -20,6 +22,7 @@ interface ChecklistItemProps {
 export function ChecklistItem({ item, onToggle, index }: ChecklistItemProps) {
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}

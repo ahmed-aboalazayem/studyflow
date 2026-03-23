@@ -30,3 +30,29 @@ export function formatSecondsToDuration(totalSeconds: number): string {
   }
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
+
+export function formatSecondsToFriendly(totalSeconds: number): string {
+  if (!totalSeconds || totalSeconds < 0) return "0m"
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const remainingSeconds = totalSeconds % 60
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+  if (minutes > 0) {
+    return `${minutes}m`
+  }
+  return `${remainingSeconds}s`
+}
+
+export function formatMinutesToFriendly(totalMinutes: number): string {
+  if (!totalMinutes || totalMinutes < 0) return "0m"
+  const hours = Math.floor(totalMinutes / 60)
+  const mins = Math.floor(totalMinutes % 60)
+
+  if (hours > 0) {
+    return `${hours}h ${mins}m`
+  }
+  return `${mins}m`
+}

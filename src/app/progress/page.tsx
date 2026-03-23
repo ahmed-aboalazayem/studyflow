@@ -8,6 +8,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import { useStore } from "@/lib/store"
 import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
+import { LoadingState } from "@/components/ui/LoadingState"
+
+import { parseDurationToSeconds, formatSecondsToFriendly } from "@/lib/utils"
+import { StudyTimeCard, StreakCard, ActivityCard, ActiveCoursesCard } from "@/components/ui/StatsCards"
 
 interface ProgressData {
   studyTime: string
@@ -24,6 +28,15 @@ interface ProgressData {
     totalItems: number
     progress: number
   } | null
+  recentActivity: { title: string; timeLabel: string }[]
+}
+
+// Helper to get date string YYYY-MM-DD
+const getDateStr = (date: Date) => date.toISOString().split('T')[0]
+
+const itemVars: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
 }
 
 export default function ProgressPage() {
@@ -33,22 +46,86 @@ export default function ProgressPage() {
   const [data, setData] = React.useState<ProgressData | null>(null)
   const [loading, setLoading] = React.useState(true)
 
+  // Helper for relative time
+  const getRelativeTime = (date: Date) => {
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000)
+    if (diffInSeconds < 60) return "just now"
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    return new Date(date).toLocaleDateString()
+  }
+
   React.useEffect(() => {
-    if (user && courses.length > 0) {
-      // Calculate progress data locally
+    if (user) {
       const allItems = Object.values(courseDetails).flat().flatMap(b => b.items)
-      const completedVideosCount = allItems.filter(i => i.completed).length
-      const activeCoursesCount = courses.length
+      const completedItems = [...allItems].filter(i => i.completed)
+        .sort((a, b) => new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime())
       
+      const recentActivity = completedItems.slice(0, 3).map(item => ({
+        title: item.title,
+        timeLabel: item.updatedAt ? getRelativeTime(new Date(item.updatedAt)) : "just now"
+      }))
+
+      // 1. Study Time
+      const totalSeconds = completedItems.reduce((acc, i) => acc + parseDurationToSeconds(i.duration), 0)
+      const studyTime = formatSecondsToFriendly(totalSeconds)
+
+      // 2. Heatmap & completions by day
+      const completionsByDay: Record<string, number> = {}
+      completedItems.forEach(i => {
+        if (i.updatedAt) {
+          const d = getDateStr(new Date(i.updatedAt))
+          completionsByDay[d] = (completionsByDay[d] || 0) + 1
+        }
+      })
+
+      const heatmap = []
+      const now = new Date()
+      for (let i = 27; i >= 0; i--) {
+        const d = new Date(now)
+        d.setDate(d.getDate() - i)
+        const dStr = getDateStr(d)
+        const count = completionsByDay[dStr] || 0
+        heatmap.push({
+          date: dStr,
+          count,
+          intensity: count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : 3
+        })
+      }
+
+      // 3. Streak
+      let streakCount = 0
+      let checkDate = new Date()
+      while (true) {
+        const dStr = getDateStr(checkDate)
+        if (completionsByDay[dStr]) {
+          streakCount++
+          checkDate.setDate(checkDate.getDate() - 1)
+        } else {
+          if (streakCount === 0) {
+             const yesterday = new Date()
+             yesterday.setDate(yesterday.getDate() - 1)
+             const yStr = getDateStr(yesterday)
+             if (completionsByDay[yStr]) {
+                checkDate = yesterday
+                continue
+             }
+          }
+          break
+        }
+      }
+
+      // 4. Other stats
+      const activeCoursesCount = courses.length
       let totalProgress = 0
       courses.forEach((c: any) => totalProgress += (c.progress || 0))
       const overallProgressCount = courses.length === 0 ? 0 : Math.round(totalProgress / courses.length)
 
-      // Find most active course
       let mostActive: any = null
       let maxCompleted = -1
       courses.forEach((c: any) => {
-        if (c.completedVideos > maxCompleted) {
+        if (c.completedVideos >= maxCompleted && c.totalVideos > 0) {
           maxCompleted = c.completedVideos
           mostActive = {
             id: c.id,
@@ -62,47 +139,20 @@ export default function ProgressPage() {
       })
 
       setData({
-        studyTime: "Mock 0h 0m", 
-        streak: "Mock 1 Day",
-        completedVideos: completedVideosCount,
+        studyTime,
+        streak: `${streakCount} Day${streakCount !== 1 ? 's' : ''}`,
+        completedVideos: completedItems.length,
         activeCourses: activeCoursesCount,
         overallProgress: overallProgressCount,
-        heatmap: [], 
-        mostActiveCourse: mostActive
-      })
-      setLoading(false)
-    } else if (user && courses.length === 0) {
-      setData({
-        studyTime: "0h 0m",
-        streak: "0 Days",
-        completedVideos: 0,
-        activeCourses: 0,
-        overallProgress: 0,
-        heatmap: [],
-        mostActiveCourse: null
-      })
+        heatmap,
+        mostActiveCourse: mostActive,
+        recentActivity
+      } as any)
       setLoading(false)
     }
   }, [user, courses, courseDetails])
 
-  const containerVars: Variants = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-  }
-
-  const itemVars: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-  }
-
   if (!user) return null
-
-  const stats = [
-    { label: "Study Time", value: data?.studyTime || "0h 0m", icon: Clock, color: "text-blue-400" },
-    { label: "Current Streak", value: data?.streak || "0 Days", icon: Flame, color: "text-orange-400" },
-    { label: "Completed Videos", value: String(data?.completedVideos || 0), icon: CheckCircle, color: "text-primary" },
-    { label: "Active Courses", value: String(data?.activeCourses || 0), icon: BookOpen, color: "text-emerald-400" },
-  ]
 
   const heatmapData = data?.heatmap || []
   const overallProgress = data?.overallProgress || 0
@@ -118,41 +168,24 @@ export default function ProgressPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-          </div>
+          <LoadingState />
         ) : (
           <>
             <motion.div 
-              variants={containerVars}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
             >
-              {stats.map((stat, i) => {
-                const Icon = stat.icon
-                return (
-                  <motion.div key={i} variants={itemVars}>
-                    <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className={`p-3 rounded-xl bg-black/30 ${stat.color}`}>
-                            <Icon className="w-6 h-6" />
-                          </div>
-                          {i === 1 && (
-                            <span className="flex h-3 w-3 relative">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="text-sm font-medium text-foreground/60 uppercase tracking-widest mb-1">{stat.label}</h3>
-                        <p className="text-3xl font-bold text-white">{stat.value}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )
-              })}
+              <StudyTimeCard value={data?.studyTime || "0m"} />
+              <StreakCard days={data?.streak || "0 Days"} />
+              <ActivityCard 
+                count={data?.completedVideos || 0} 
+                recent={(data as any)?.recentActivity || []} 
+              />
+              <ActiveCoursesCard 
+                count={data?.activeCourses || 0} 
+                courses={courses} 
+              />
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

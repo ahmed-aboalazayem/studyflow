@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  username    String   @unique
+  password    String
+  displayName String?
+  imageUrl    String?
+  courses     Course[]
+  shares    CourseShare[]
+  progress  ItemProgress[]
+  notes     CourseNote[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id              String   @id @default(cuid())
+  title           String
+  imageUrl        String?
+  totalVideos     Int      @default(0)
+  completedVideos Int      @default(0)
+  progress        Int      @default(0)
+  ownerName       String?
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
+  dayBlocks       DayBlock[]
+  shares          CourseShare[]
+  notes           CourseNote[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CourseShare {
+  courseId  String
+  userId    Int
+  role      String   @default("view") // "view" or "edit"
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([courseId, userId])
+}
+
+model DayBlock {
+  id        String   @id @default(cuid())
+  title     String
+  sortOrder Int      @default(0)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Item {
+  id        String   @id @default(cuid())
+  title     String
+  duration  String
+  sortOrder Int      @default(0)
+  blockId   String
+  dayBlock  DayBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  progress  ItemProgress[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ItemProgress {
+  userId    Int
+  itemId    String
+  completed Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+  @@id([userId, itemId])
+}
+
+model CourseNote {
+  id        String   @id @default(cuid())
+  content   String
+  courseId  String
+  userId    Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+  @@unique([courseId, userId])
+}

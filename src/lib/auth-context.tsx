@@ -1,59 +1,65 @@
 "use client"
 
 import * as React from "react"
+import { loginAction, registerAction, logoutAction, getMe } from "@/app/actions"
 
 interface User {
   id: number
   username: string
+  displayName?: string | null
+  imageUrl?: string | null
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
-  register: (username: string, password: string) => Promise<void>
-  logout: () => void
+  login: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
+  register: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
+  logout: () => Promise<void>
+  checkSession: () => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined)
 
-const USER_KEY = 'studyflow_user'
-const DEFAULT_USER = { id: 1, username: 'Local User' }
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<User | null>(DEFAULT_USER)
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [user, setUser] = React.useState<User | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  React.useEffect(() => {
-    const storedUser = localStorage.getItem(USER_KEY)
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    } else {
-      localStorage.setItem(USER_KEY, JSON.stringify(DEFAULT_USER))
-    }
+  const checkSession = React.useCallback(async () => {
+    setIsLoading(true)
+    const currentUser = await getMe()
+    setUser(currentUser)
     setIsLoading(false)
   }, [])
 
-  const login = async (username: string, _password: string) => {
-    const mockUser = { id: 1, username }
-    setUser(mockUser)
-    localStorage.setItem(USER_KEY, JSON.stringify(mockUser))
+  React.useEffect(() => {
+    checkSession()
+  }, [checkSession])
+
+  const login = async (formData: FormData) => {
+    const result = await loginAction(formData)
+    if (result.success) {
+      await checkSession()
+    }
+    return result
   }
 
-  const register = async (username: string, _password: string) => {
-    const mockUser = { id: 1, username }
-    setUser(mockUser)
-    localStorage.setItem(USER_KEY, JSON.stringify(mockUser))
+  const register = async (formData: FormData) => {
+    const result = await registerAction(formData)
+    if (result.success) {
+      await checkSession()
+    }
+    return result
   }
 
-  const logout = () => {
-    // No-op or reset to default
-    setUser(DEFAULT_USER)
-    localStorage.setItem(USER_KEY, JSON.stringify(DEFAULT_USER))
+  const logout = async () => {
+    await logoutAction()
+    setUser(null)
+    window.location.href = '/login'
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, checkSession }}>
       {children}
     </AuthContext.Provider>
   )
@@ -64,3 +70,4 @@ export function useAuth() {
   if (!context) throw new Error("useAuth must be used within AuthProvider")
   return context
 }
+
