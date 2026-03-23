@@ -211,6 +211,25 @@ export async function addCourse(data: { title: string; imageUrl: string }) {
   return course
 }
 
+export async function deleteAccount() {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  try {
+    await prisma.user.delete({
+      where: { id: session.id }
+    })
+    
+    const cookieStore = await cookies()
+    cookieStore.delete('session')
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Delete account error:', error)
+    return { error: 'Failed to delete account' }
+  }
+}
+
 export async function deleteCourse(courseId: string) {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }

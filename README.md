@@ -31,9 +31,9 @@ Experience a cosmic study environment with dynamic nebulas, glowing red accents,
 - **Leaderboards**: Compete with friends or fellow students to see who's leading the study streak.
 - **Shared Courses**: Collaborate and track progress together on shared learning paths.
 
-### 🛠️ Developer-Centric Profile
-- **Global Settings**: Customize your identity with a variety of futuristic avatars.
-- **Social Integration**: Connect with the developer through a modern, glassmorphic space footer.
+### 🛡️ Account & Safety
+- **Danger Zone**: Securely delete your account and all associated data with a confirmation modal.
+- **Identity Customization**: Futuristic avatars and display name management.
 
 ---
 
@@ -43,6 +43,7 @@ Experience a cosmic study environment with dynamic nebulas, glowing red accents,
 - **Tailwind CSS 4**: Cutting-edge utility-first styling for maximum performance and modern aesthetics.
 - **Framer Motion**: Fluid, physics-based animations and transitions throughout the entire UI.
 - **Lucide Icons**: Crisp, professional iconography for a premium look and feel.
+- **Mobile First**: Fully responsive experience with a dedicated mobile navigation menu and optimized touch layouts.
 - **Responsive Design**: Flawless experience across mobile, tablet, and desktop devices.
 - **Skeleton Loading**: Precision-engineered placeholders for zero-layout-shift navigation.
 

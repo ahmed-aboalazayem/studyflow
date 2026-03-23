@@ -29,7 +29,7 @@ model Course {
   progress        Int      @default(0)
   ownerName       String?
   userId          Int
-  user            User     @relation(fields: [userId], references: [id])
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   dayBlocks       DayBlock[]
   shares          CourseShare[]
   notes           CourseNote[]

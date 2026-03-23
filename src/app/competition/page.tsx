@@ -38,9 +38,29 @@ export default function CompetitionPage() {
 
   if (!isLoaded) {
     return (
-      <main className="relative min-h-screen pt-24 pb-12 text-center">
+      <main className="relative min-h-screen pt-24 pb-12">
         <BackgroundEffect />
-        <LoadingState />
+        <div className="container mx-auto px-4 relative z-10 animate-pulse">
+          <div className="mb-12 space-y-2">
+            <div className="h-10 w-64 bg-white/10 rounded-xl" />
+            <div className="h-5 w-96 bg-white/5 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-4 space-y-4">
+              <div className="h-4 w-32 bg-white/5 rounded mb-6" />
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-20 w-full bg-white/5 rounded-2xl border border-white/5" />
+              ))}
+            </div>
+            <div className="lg:col-span-8 space-y-8">
+               <div className="h-24 w-full bg-white/5 rounded-2xl" />
+               <div className="grid grid-cols-2 gap-8">
+                  <div className="h-80 bg-white/5 rounded-3xl" />
+                  <div className="h-80 bg-white/5 rounded-3xl" />
+               </div>
+            </div>
+          </div>
+        </div>
       </main>
     )
   }
@@ -131,7 +151,7 @@ export default function CompetitionPage() {
                       <Medal className="w-5 h-5 text-primary" />
                       Leaderboard
                     </h3>
-                    <Leaderboard data={leaderboardData} />
+                    <Leaderboard data={leaderboardData} loading={loading} />
                   </div>
 
                   <div className="glass border border-white/10 rounded-3xl p-8 space-y-6 flex flex-col items-center justify-center text-center">

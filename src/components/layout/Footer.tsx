@@ -113,17 +113,18 @@ export function Footer() {
 
 function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <motion.a 
-      href={href} 
-      target="_blank" 
+    <motion.a
+      href={href}
+      target="_blank"
       rel="noopener noreferrer"
       whileHover={{ y: -8, scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
-      className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/60 transition-all duration-500 shadow-xl hover:text-primary hover:border-primary/50 hover:shadow-[0_15px_40px_rgba(255,31,31,0.25)] group relative"
+      transition={{ type: "spring", stiffness: 600, damping: 30 }} // سريع وسلس
+      className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/60 transition-all duration-150 shadow-xl hover:text-primary hover:border-primary/50 hover:shadow-[0_15px_40px_rgba(255,31,31,0.25)] group relative"
     >
-      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500 rounded-2xl" />
+      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-150 rounded-2xl" />
       {icon}
-      <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-black uppercase tracking-widest text-primary pointer-events-none whitespace-nowrap">
+      <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] font-black uppercase tracking-widest text-primary pointer-events-none whitespace-nowrap">
         {label}
       </span>
     </motion.a>

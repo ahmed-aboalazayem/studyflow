@@ -243,3 +243,28 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
     </Card>
   )
 }
+export function DayBlockSkeleton() {
+  return (
+    <Card className="mb-8 border-white/5 bg-black/20 animate-pulse">
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex-1 space-y-3">
+            <div className="h-7 w-48 bg-white/10 rounded-lg" />
+            <div className="flex items-center gap-4">
+              <div className="h-4 w-20 bg-white/5 rounded-lg" />
+              <div className="h-4 w-20 bg-white/5 rounded-lg" />
+              <div className="h-4 w-24 bg-white/10 rounded-lg" />
+            </div>
+          </div>
+        </div>
+        <div className="w-full h-1.5 bg-white/5 rounded-full mb-8" />
+        <div className="space-y-3 mb-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 w-full bg-white/5 rounded-xl border border-white/5" />
+          ))}
+        </div>
+        <div className="h-12 w-full bg-white/5 rounded-xl border-dashed border-2 border-white/5" />
+      </div>
+    </Card>
+  )
+}

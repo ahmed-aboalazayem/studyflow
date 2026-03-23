@@ -44,7 +44,7 @@ export function CourseCard({ course }: CourseCardProps) {
           {/* Subtle Glow Effect */}
           <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur" />
           
-          <div className="relative h-48 w-full overflow-hidden bg-white/5">
+          <div className="relative h-40 sm:h-48 w-full overflow-hidden bg-white/5">
             {course.imageUrl ? (
               <Image
                 src={course.imageUrl}
@@ -113,5 +113,20 @@ export function CourseCard({ course }: CourseCardProps) {
         onAction={() => deleteCourse(course.id)}
       />
     </Link>
+  )
+}
+export function CourseCardSkeleton() {
+  return (
+    <Card className="h-full border border-white/5 bg-black/20 backdrop-blur-xl overflow-hidden animate-pulse">
+      <div className="h-48 w-full bg-white/5" />
+      <CardContent className="p-6 bg-background/40 space-y-4">
+        <div className="h-7 w-3/4 bg-white/10 rounded-lg" />
+        <div className="flex items-center justify-between">
+          <div className="h-5 w-20 bg-white/5 rounded-lg" />
+          <div className="h-5 w-10 bg-white/10 rounded-lg" />
+        </div>
+        <div className="w-full h-1.5 rounded-full bg-white/5" />
+      </CardContent>
+    </Card>
   )
 }

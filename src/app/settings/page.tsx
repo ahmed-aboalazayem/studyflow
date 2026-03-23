@@ -7,7 +7,8 @@ import { Settings, User as UserIcon, Lock, Camera, Save, LogOut, CheckCircle2, D
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
-import { updateProfileAction, fixDatabaseSchema } from "@/app/actions"
+import { useStore } from "@/lib/store"
+import { updateProfileAction } from "@/app/actions"
 import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
 import { Modal } from "@/components/ui/Modal"
 import { LoadingState } from "@/components/ui/LoadingState"
@@ -24,9 +25,12 @@ const AVATARS = [
 
 export default function SettingsPage() {
   const { user: authUser, checkSession, logout } = useAuth()
+  const { deleteAccount } = useStore()
   const [loading, setLoading] = React.useState(true)
   const [saving, setSaving] = React.useState(false)
   const [imageUrl, setImageUrl] = React.useState("")
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false)
+  const [deleting, setDeleting] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; description: string; type: "success" | "error" | "info" }>({
@@ -35,6 +39,32 @@ export default function SettingsPage() {
     description: "",
     type: "info"
   })
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true)
+    try {
+      const res = await deleteAccount()
+      if (res.error) {
+        setModal({
+          isOpen: true,
+          title: "Deletion Failed",
+          description: res.error,
+          type: "error"
+        })
+      }
+    } catch (err) {
+      console.error("Failed to delete account", err)
+      setModal({
+        isOpen: true,
+        title: "Deletion Failed",
+        description: "Something went wrong while deleting your account.",
+        type: "error"
+      })
+    } finally {
+      setDeleting(false)
+      setShowDeleteModal(false)
+    }
+  }
 
   React.useEffect(() => {
     if (authUser) {
@@ -91,33 +121,38 @@ export default function SettingsPage() {
     }
   }
 
-  const handleFix = async () => {
-    setLoading(true)
-    const res = await fixDatabaseSchema()
-    if (res.success) {
-      setModal({
-        isOpen: true,
-        title: "Database Repaired!",
-        description: "Missing columns have been added manually. You can now use all profile features.",
-        type: "success"
-      })
-    } else {
-      setModal({
-        isOpen: true,
-        title: "Repair Failed",
-        description: res.error || "Something went wrong while fixing the database.",
-        type: "error"
-      })
-    }
-    setLoading(false)
-  }
-
   if (loading && !authUser) {
      return (
-       <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+       <main className="relative min-h-screen pt-24 pb-12">
          <BackgroundEffect />
-         <LoadingState />
-       </div>
+         <div className="container mx-auto px-4 max-w-2xl relative z-10 animate-pulse">
+            <div className="space-y-2 mb-12">
+              <div className="h-10 w-48 bg-white/10 rounded-xl" />
+              <div className="h-5 w-64 bg-white/5 rounded-lg" />
+            </div>
+            <div className="glass border border-white/10 rounded-3xl p-8 space-y-8">
+              <div className="flex items-center gap-8">
+                <div className="w-32 h-32 rounded-3xl bg-white/5" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-32 bg-white/5" />
+                  <div className="grid grid-cols-4 gap-2">
+                    {[1, 2, 3, 4].map(i => <div key={i} className="w-10 h-10 rounded-xl bg-white/5" />)}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="h-3 w-20 bg-white/5" />
+                  <div className="h-12 w-full bg-white/5 rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 w-20 bg-white/5" />
+                  <div className="h-12 w-full bg-white/5 rounded-xl" />
+                </div>
+              </div>
+            </div>
+         </div>
+       </main>
      )
   }
 
@@ -136,15 +171,6 @@ export default function SettingsPage() {
               <h1 className="text-4xl font-black text-gradient tracking-tighter mb-2">Settings</h1>
               <p className="text-foreground/40">Manage your profile, security, and preferences.</p>
             </div>
-            <Button 
-              onClick={handleFix}
-              variant="glass" 
-              size="sm"
-              className="border-primary/20 text-primary/60 hover:text-primary hover:border-primary/40 bg-primary/5 rounded-xl text-[10px] font-black uppercase tracking-widest h-8"
-            >
-              <Database className="w-3.5 h-3.5 mr-1.5" />
-              Fix Database
-            </Button>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-6">
@@ -160,7 +186,7 @@ export default function SettingsPage() {
                   <div className="relative group">
                     <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-primary/20 bg-black/40 relative shadow-[0_0_30px_rgba(255,31,31,0.1)]">
                       {imageUrl ? (
-                        <Image src={imageUrl} alt="Profile" fill className="object-cover" />
+                        <img src={imageUrl} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-primary/20">
                           <UserIcon className="w-12 h-12" />
@@ -196,7 +222,7 @@ export default function SettingsPage() {
                             imageUrl === avatar ? 'border-primary ring-4 ring-primary/20' : 'border-white/10 hover:border-white/30'
                           }`}
                         >
-                          <Image src={avatar} alt={`Avatar ${idx}`} width={40} height={40} />
+                          <img src={avatar} alt={`Avatar ${idx}`} width={40} height={40} />
                         </button>
                       ))}
                     </div>
@@ -272,6 +298,23 @@ export default function SettingsPage() {
                 <LogOut className="w-5 h-5" />
               </Button>
             </div>
+            
+            <div className="pt-12 border-t border-white/5">
+              <div className="bg-red-500/5 border border-red-500/20 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-red-500">Danger Zone</h3>
+                  <p className="text-sm text-foreground/40">Once you delete your account, there is no going back. Please be certain.</p>
+                </div>
+                <Button 
+                  type="button"
+                  variant="glass"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-2xl h-12 px-6 font-bold"
+                >
+                  Delete Account
+                </Button>
+              </div>
+            </div>
           </form>
         </motion.div>
       </div>
@@ -282,6 +325,15 @@ export default function SettingsPage() {
         title={modal.title}
         description={modal.description}
         type={modal.type}
+      />
+      <Modal 
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Account?"
+        description="Are you sure you want to delete your account? All your courses, progress, and data will be permanently removed. This action cannot be undone."
+        type="error"
+        actionText={deleting ? "Deleting..." : "Delete Permanently"}
+        onAction={handleDeleteAccount}
       />
     </main>
   )

@@ -98,6 +98,7 @@ export default function AddCoursePage() {
                   />
                 </div>
 
+
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-white/80">Course Thumbnail</label>
                   <div

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { CourseCard } from "@/components/course/CourseCard"
+import { CourseCard, CourseCardSkeleton } from "@/components/course/CourseCard"
 import { useStore } from "@/lib/store"
 import { useAuth } from "@/lib/auth-context"
 import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
@@ -33,7 +33,17 @@ export default function Home() {
       <main className="relative min-h-screen">
         <BackgroundEffect />
         <div className="container mx-auto px-4 py-12 relative z-10">
-          <LoadingState />
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
+            <div className="space-y-2">
+              <div className="h-12 w-64 bg-white/10 rounded-xl animate-pulse" />
+              <div className="h-6 w-96 bg-white/5 rounded-lg animate-pulse" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
+          </div>
         </div>
       </main>
     )

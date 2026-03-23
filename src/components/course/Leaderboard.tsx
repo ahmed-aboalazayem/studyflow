@@ -12,11 +12,44 @@ interface LeaderboardUser {
 
 interface LeaderboardProps {
   data: LeaderboardUser[]
+  loading?: boolean
 }
 
 import { formatMinutesToFriendly } from "@/lib/utils"
 
-export function Leaderboard({ data }: LeaderboardProps) {
+export function Leaderboard({ data, loading }: LeaderboardProps) {
+  if (loading) {
+    return (
+      <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 glass backdrop-blur-2xl animate-pulse">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-white/5 w-9 h-9" />
+            <div className="h-6 w-32 bg-white/5 rounded-lg" />
+          </div>
+          <div className="h-4 w-24 bg-white/5 rounded-lg" />
+        </div>
+
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/5">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5" />
+                <div className="space-y-2">
+                  <div className="h-4 w-24 bg-white/10 rounded-lg" />
+                  <div className="h-3 w-32 bg-white/5 rounded-lg" />
+                </div>
+              </div>
+              <div className="space-y-2 flex flex-col items-end">
+                <div className="h-5 w-16 bg-white/10 rounded-lg" />
+                <div className="h-3 w-12 bg-white/5 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   if (data.length === 0) return null
 
   const firstPlace = data[0]

@@ -3,22 +3,34 @@
 import * as React from "react"
 import type { CourseData } from "@/components/course/CourseCard"
 import type { DayBlockData } from "@/components/course/DayBlock"
-import { 
-  getCourses, 
-  addCourse as addCourseAction, 
+import {
+  getCourses,
+  addCourse as addCourseAction,
   deleteCourse as deleteCourseAction,
   addDayBlock as addDayBlockAction,
   deleteDayBlock as deleteDayBlockAction,
   addItemsToBlock as addItemsToBlockAction,
   toggleItem as toggleItemAction,
-  updateBlockTitle as updateBlockTitleAction
+  updateBlockTitle as updateBlockTitleAction,
+  deleteAccount as deleteAccountAction
 } from "@/app/actions"
 
+export interface Course {
+  id: string
+  title: string
+  imageUrl: string
+  progress: number
+  totalVideos: number
+  completedVideos: number
+  ownership?: 'owned' | 'shared'
+  ownerName?: string | null
+}
+
 interface StoreState {
-  courses: CourseData[]
+  courses: Course[]
   courseDetails: Record<string, DayBlockData[]>
   isLoaded: boolean
-  addCourse: (course: Partial<CourseData>) => Promise<CourseData>
+  addCourse: (course: { title: string; imageUrl: string }) => Promise<any>
   updateCourseBlocks: (courseId: string, blocks: DayBlockData[]) => void
   fetchCourses: () => Promise<void>
   fetchCourseDetail: (courseId: string) => Promise<void>
@@ -26,16 +38,20 @@ interface StoreState {
   addItemsToBlock: (blockId: string, items: { title: string; duration: string }[]) => Promise<any>
   toggleItem: (itemId: string, completed: boolean) => Promise<void>
   updateBlockTitle: (blockId: string, title: string) => Promise<void>
-  deleteCourse: (id: string) => Promise<void>
+  deleteCourse: (courseId: string) => Promise<void>
   deleteDayBlock: (courseId: string, blockId: string) => Promise<void>
+  deleteAccount: () => Promise<any>
+  recentlySharedWith: string[]
+  addRecentlyShared: (username: string) => void
 }
 
 const StoreContext = React.createContext<StoreState | undefined>(undefined)
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [courses, setCourses] = React.useState<CourseData[]>([])
+  const [courses, setCourses] = React.useState<Course[]>([])
   const [courseDetails, setCourseDetails] = React.useState<Record<string, DayBlockData[]>>({})
   const [isLoaded, setIsLoaded] = React.useState(false)
+  const [recentlySharedWith, setRecentlySharedWith] = React.useState<string[]>([])
 
   const fetchCourses = React.useCallback(async () => {
     const data = await getCourses()
@@ -75,7 +91,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Initial load
   React.useEffect(() => {
     fetchCourses()
+    // Load recently shared from localStorage
+    const saved = localStorage.getItem('studyflow_recent_shares')
+    if (saved) {
+      try {
+        setRecentlySharedWith(JSON.parse(saved))
+      } catch (e) {
+        console.error('Failed to parse recent shares', e)
+      }
+    }
   }, [fetchCourses])
+
+  const addRecentlyShared = React.useCallback((username: string) => {
+    setRecentlySharedWith(prev => {
+      const filtered = prev.filter(u => u !== username)
+      const next = [username, ...filtered].slice(0, 5) // Keep last 5
+      localStorage.setItem('studyflow_recent_shares', JSON.stringify(next))
+      return next
+    })
+  }, [])
 
   const fetchCourseDetail = React.useCallback(async (courseId: string) => {
     // Already loaded in fetchCourses for now as it fetches the graph
@@ -111,6 +145,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await fetchCourses()
   }, [fetchCourses])
 
+  const deleteAccount = React.useCallback(async () => {
+    const res = await deleteAccountAction()
+    if (res.success) {
+      setCourses([])
+      setCourseDetails({})
+      setIsLoaded(false)
+      window.location.href = '/login'
+    }
+    return res
+  }, [])
+
   const addItemsToBlock = React.useCallback(async (blockId: string, items: { title: string; duration: string }[]) => {
     const result = await addItemsToBlockAction(blockId, items)
     if ('error' in result) throw new Error(result.error)
@@ -141,7 +186,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addCourse, updateCourseBlocks,
       fetchCourses, fetchCourseDetail,
       addDayBlock, addItemsToBlock, toggleItem, updateBlockTitle,
-      deleteCourse, deleteDayBlock
+      deleteCourse, deleteDayBlock, deleteAccount,
+      recentlySharedWith, addRecentlyShared
     }}>
       {children}
     </StoreContext.Provider>

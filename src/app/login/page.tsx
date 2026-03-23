@@ -3,7 +3,7 @@ import { loginAction } from '@/app/actions'
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#070707] p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-black to-black">
+    <div className="min-h-screen flex items-center justify-center bg-[#020202] p-4 bg-[radial-gradient(circle_at_top,_#0a0a0a_0%,_#020202_60%)]">
       <AuthForm type="login" onSubmit={loginAction} />
     </div>
   )

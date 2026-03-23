@@ -168,7 +168,20 @@ export default function ProgressPage() {
         </div>
 
         {loading ? (
-          <LoadingState />
+          <div className="space-y-8 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-32 bg-white/5 border border-white/10 rounded-3xl" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1 h-80 bg-white/5 border border-white/10 rounded-3xl" />
+              <div className="lg:col-span-2 space-y-8">
+                <div className="h-64 bg-white/5 border border-white/10 rounded-3xl" />
+                <div className="h-40 bg-white/5 border border-white/10 rounded-3xl" />
+              </div>
+            </div>
+          </div>
         ) : (
           <>
             <motion.div 
