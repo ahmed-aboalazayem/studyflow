@@ -165,13 +165,91 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [fetchCourses])
 
   const toggleItem = React.useCallback(async (itemId: string, completed: boolean) => {
-    await toggleItemAction(itemId, completed)
-    await fetchCourses()
-  }, [fetchCourses])
+    // 1. Find the item and course first to avoid stale state in calculations
+    let targetCourseId: string | undefined;
+    
+    // We search through the current state to find which course this item belongs to
+    // This allows us to update the course progress correctly
+    for (const [id, blocks] of Object.entries(courseDetails)) {
+      if (blocks.some(b => b.items.some(i => i.id === itemId))) {
+        targetCourseId = id;
+        break;
+      }
+    }
+
+    if (!targetCourseId) {
+      // Fallback: just hit the API and refresh
+      await toggleItemAction(itemId, completed)
+      await fetchCourses()
+      return
+    }
+
+    // 2. Optimistic Update Course Details
+    setCourseDetails(prev => {
+      const courseBlocks = prev[targetCourseId!];
+      if (!courseBlocks) return prev;
+
+      const nextBlocks = courseBlocks.map(block => {
+        const itemIdx = block.items.findIndex(i => i.id === itemId);
+        if (itemIdx === -1) return block;
+
+        const nextItems = [...block.items];
+        nextItems[itemIdx] = { ...nextItems[itemIdx], completed };
+        return { ...block, items: nextItems };
+      });
+
+      return { ...prev, [targetCourseId!]: nextBlocks };
+    });
+
+    // 3. Optimistic Update Courses List (Progress)
+    setCourses(prev => prev.map(c => {
+      if (c.id !== targetCourseId) return c;
+      
+      const delta = completed ? 1 : -1;
+      const nextCompleted = Math.max(0, Math.min(c.totalVideos, c.completedVideos + delta));
+      return {
+        ...c,
+        completedVideos: nextCompleted,
+        progress: c.totalVideos === 0 ? 0 : Math.round((nextCompleted / c.totalVideos) * 100)
+      };
+    }));
+
+    // 4. Server Update
+    try {
+      const result = await toggleItemAction(itemId, completed)
+      if ('error' in result) throw new Error(result.error)
+      // Final sync to ensure everything matches server truth (e.g. updatedAt timestamps)
+      await fetchCourses()
+    } catch (err) {
+      console.error("Failed to toggle item", err)
+      // Rollback on error
+      await fetchCourses()
+    }
+  }, [courseDetails, fetchCourses])
 
   const updateBlockTitle = React.useCallback(async (blockId: string, title: string) => {
-    await updateBlockTitleAction(blockId, title)
-    await fetchCourses()
+    // Optimistic Update
+    setCourseDetails(prev => {
+      const next = { ...prev }
+      for (const courseId in next) {
+        const blockIdx = next[courseId].findIndex(b => b.id === blockId)
+        if (blockIdx > -1) {
+          const nextBlocks = [...next[courseId]]
+          nextBlocks[blockIdx] = { ...nextBlocks[blockIdx], title }
+          next[courseId] = nextBlocks
+          break
+        }
+      }
+      return next
+    })
+
+    try {
+      await updateBlockTitleAction(blockId, title)
+      await fetchCourses()
+    } catch (err) {
+      console.error("Failed to update block title", err)
+      await fetchCourses()
+    }
   }, [fetchCourses])
 
   const updateCourseBlocks = React.useCallback((courseId: string, blocks: DayBlockData[]) => {
