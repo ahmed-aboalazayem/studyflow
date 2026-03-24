@@ -4,45 +4,41 @@ import * as React from "react"
 import { Linkedin, Mail, Github, Globe } from "lucide-react"
 import { motion } from "framer-motion"
 
-export function Footer() {
-  const [currentYear, setCurrentYear] = React.useState<number>(new Date().getFullYear())
-
-  React.useEffect(() => {
-    setCurrentYear(new Date().getFullYear())
-  }, [])
+export const Footer = React.memo(function Footer() {
+  const currentYear = new Date().getFullYear();
 
   return (
     <footer className="relative bg-[#030303] rounded-t-[50px] py-16 px-5 mt-auto flex flex-col items-center gap-12 border-t border-white/5 overflow-hidden">
       {/* Cosmic Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Glowing Nebulas */}
+        {/* Glowing Nebulas - optimized blur and animations */}
         <motion.div 
           animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.2, 0.1],
+            opacity: [0.08, 0.15, 0.08],
           }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-10%] left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px]" 
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-10%] left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[80px] will-change-[opacity]" 
         />
         <motion.div 
           animate={{ 
-            scale: [1.2, 1, 1.2],
-            opacity: [0.05, 0.15, 0.05],
+            opacity: [0.05, 0.12, 0.05],
           }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-[#8b5cf6]/10 rounded-full blur-[150px]" 
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-[#8b5cf6]/10 rounded-full blur-[100px] will-change-[opacity]" 
         />
         
-        {/* Infinite Star Field Effect */}
-        <div className="absolute inset-0 opacity-20" style={{ 
-          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', 
-          backgroundSize: '80px 80px' 
-        }} />
-        <div className="absolute inset-0 opacity-10" style={{ 
-          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', 
-          backgroundSize: '120px 120px',
-          backgroundPosition: '40px 40px'
-        }} />
+        {/* Infinite Star Field Effect - consolidated to single layer with CSS-only rendering */}
+        <div 
+          className="absolute inset-0 opacity-15" 
+          style={{ 
+            backgroundImage: `
+              radial-gradient(circle, #ffffff 1px, transparent 1px),
+              radial-gradient(circle, #ffffff 1px, transparent 1px)
+            `,
+            backgroundSize: '80px 80px, 120px 120px',
+            backgroundPosition: '0 0, 40px 40px'
+          }} 
+        />
       </div>
 
       <div className="flex flex-col items-center gap-10 w-full max-w-6xl mx-auto relative z-10">
@@ -52,7 +48,8 @@ export function Footer() {
             whileHover={{ scale: 1.05 }}
             className="relative"
           >
-            <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+            {/* Optimized profile glow */}
+            <div className="absolute -inset-4 bg-primary/20 rounded-full blur-xl animate-pulse will-change-[opacity]" />
             <img 
               src="/images/profile.png" 
               alt="Ahmed Aboalazayem" 
@@ -103,13 +100,13 @@ export function Footer() {
 
       <div className="relative z-10 flex flex-col items-center gap-2">
         <div className="h-px w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent mb-4" />
-        <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em] text-center">
+        <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em] text-center" suppressHydrationWarning>
           © {currentYear} Ahmed Aboalazayem. All Rights Reserved.
         </p>
       </div>
     </footer>
   )
-}
+})
 
 function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
