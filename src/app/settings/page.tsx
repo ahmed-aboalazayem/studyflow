@@ -14,13 +14,16 @@ import { Modal } from "@/components/ui/Modal"
 import { LoadingState } from "@/components/ui/LoadingState"
 
 const AVATARS = [
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Aria",
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Leo",
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Luna",
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Milo",
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Zoe",
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Jasper",
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Maya",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Goku&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Zoro&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Levi&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Saitama&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Luffy&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Jotaro&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Alucard&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Kenpachi&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Itachi&hair=short01,short02,short04,short16&accessoriesProbability=0",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Guts&hair=short01,short02,short04,short16&accessoriesProbability=0"
 ]
 
 export default function SettingsPage() {
@@ -211,8 +214,8 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="flex-1">
-                    <p className="text-[10px] text-foreground/40 mb-3 font-black uppercase tracking-[0.2em]">Choose from our avatar collection</p>
-                    <div className="grid grid-cols-4 sm:grid-cols-4 gap-2">
+                    <p className="text-[10px] text-foreground/40 mb-3 font-black uppercase tracking-[0.2em]">Choose a Powerful Avatar</p>
+                    <div className="grid grid-cols-5 sm:grid-cols-5 gap-3">
                       {AVATARS.map((avatar, idx) => (
                         <button
                           key={idx}

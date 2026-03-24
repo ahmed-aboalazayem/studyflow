@@ -63,6 +63,7 @@ model Item {
   title     String
   duration  String
   sortOrder Int      @default(0)
+  isImportant Boolean @default(false)
   blockId   String
   dayBlock  DayBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
   progress  ItemProgress[]

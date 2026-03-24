@@ -92,7 +92,7 @@ export function StreakCard({ days }: { days: string }) {
           <motion.div 
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute left-[30px] bottom-[60px] w-6 h-6 rounded-full bg-orange-600 shadow-[0_0_20px_rgba(249,115,22,0.8)] border border-orange-400"
+            className="absolute left-[-10px] bottom-[60px] w-6 h-6 rounded-full bg-orange-600 shadow-[0_0_20px_rgba(249,115,22,0.8)] border border-orange-400"
           />
           <div className="absolute left-[20px] bottom-[50px] bg-black/80 text-[8px] font-black text-white px-2 py-1 rounded-md border border-white/10 uppercase">
             {dayCount}d
@@ -116,8 +116,39 @@ export function ActivityCard({ count, recent }: { count: number, recent: any[] }
 
       <div className="flex-1" />
 
-      <div className="mt-6">
-        <span className="text-5xl font-black text-white tracking-tighter">{count}</span>
+      <div className="mt-6 flex items-end justify-between relative z-10">
+        <span className="text-6xl font-black text-white tracking-tighter">{count}</span>
+      </div>
+
+      {/* Visual Component: Floating Check Ripple */}
+      <div className="absolute right-[-20px] top-1/2 -translate-y-1/2 w-48 h-48 opacity-40 pointer-events-none">
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          {[...Array(4)].map((_, i) => (
+             <motion.rect
+               key={i}
+               x="40" y="40" width="20" height="20" rx="4"
+               fill="none" stroke="#ef4444" strokeWidth="1.5"
+               initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+               animate={{ 
+                 opacity: [0, 0.6, 0], 
+                 scale: [0.5, 2.5, 4.5], 
+                 rotate: [0, 90, 180] 
+               }}
+               transition={{ 
+                 duration: 4, 
+                 repeat: Infinity, 
+                 delay: i * 1,
+                 ease: "easeOut"
+               }}
+               style={{ transformOrigin: '50px 50px' }}
+             />
+          ))}
+          <motion.circle 
+            cx="50" cy="50" r="4" fill="#ef4444"
+            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        </svg>
       </div>
     </CardBase>
   )

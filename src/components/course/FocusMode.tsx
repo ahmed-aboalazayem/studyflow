@@ -57,9 +57,27 @@ export function FocusMode() {
       <Button
         onClick={() => setPanelOpen(true)}
         variant="glass"
-        className="fixed bottom-8 right-8 w-16 h-16 rounded-full shadow-[0_0_30px_rgba(255,31,31,0.3)] border-primary/50 group z-50 p-0"
+        className={`fixed bottom-6 right-6 md:bottom-8 md:right-8 h-18 rounded-full shadow-[0_0_20px_rgba(255,31,31,0.2)] border-primary/40 group z-50 overflow-hidden transition-all duration-500 ease-out bg-black/60 backdrop-blur-3xl hover:border-primary/80 hover:shadow-[0_0_40px_rgba(255,31,31,0.5)] ${
+          isActive 
+           ? 'w-36 px-5 flex items-center justify-between' 
+           : 'w-16 p-0 flex items-center justify-center'
+        }`}
       >
-        <Brain className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
+        {isActive ? (
+          <>
+            <div>
+              {mode === 'work' ? 
+                <Brain className="w-6 h-6 text-primary animate-pulse" /> : 
+                <Coffee className="w-6 h-6 text-emerald-500 animate-pulse" />
+              }
+            </div>
+            <span className="text-xl font-black tabular-nums tracking-tighter text-white">
+              {formatTime(timeLeft)}
+            </span>
+          </>
+        ) : (
+          <Brain className="w-8 h-8 text-primary group-hover:scale-110 transition-transform duration-300" />
+        )}
       </Button>
 
       <AnimatePresence>

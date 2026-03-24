@@ -182,64 +182,99 @@ export default function CourseDetailPage() {
 
         {/* Header Section */}
         <div className="mb-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
             <div className="space-y-4 flex-1">
-              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-2xl leading-none">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter drop-shadow-2xl leading-tight">
                 {course?.title}
               </h1>
               
-              <div className="flex flex-col gap-3">
-                <p className="text-foreground/40 text-lg font-medium">{course?.totalVideos} lessons total</p>
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className="text-foreground/40 text-base sm:text-lg font-medium">{course?.totalVideos} lessons total</span>
+                <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-white/20"></span>
+                <div className="flex items-center gap-3 text-sm font-medium text-foreground/60 w-full sm:w-auto">
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 sm:flex-none justify-center">
+                    <Clock className="w-4 h-4" />
+                    {course.totalVideos} Videos
+                  </span>
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 sm:flex-none justify-center">
+                    <Calendar className="w-4 h-4" />
+                    {blocks.length} Days Planned
+                  </span>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-6 shrink-0 bg-white/5 p-4 rounded-3xl border border-white/10 md:bg-transparent md:p-0 md:border-0 md:rounded-none">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] text-foreground/40 uppercase tracking-[0.2em] font-black mb-1">Course Progress</span>
-                <span className={`text-3xl font-black tracking-tighter ${overallProgress >= 100 ? "text-emerald-400" : "text-white"}`}>
+            <div className="flex items-center justify-between lg:justify-end gap-6 bg-white/5 p-5 rounded-3xl border border-white/10 lg:bg-transparent lg:p-0 lg:border-0 lg:rounded-none mt-4 lg:mt-0 shadow-lg lg:shadow-none">
+              <div className="flex flex-col items-start lg:items-end w-full">
+                <span className="text-[10px] sm:text-[11px] text-foreground/40 uppercase tracking-[0.2em] font-black mb-1">Course Progress</span>
+                <span className={`text-4xl sm:text-5xl font-black tracking-tighter ${overallProgress >= 100 ? "text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "text-white"}`}>
                   {overallProgress}%
                 </span>
               </div>
-              <div className={`h-16 w-16 md:h-20 md:w-20 rounded-full border-4 border-white/10 relative flex items-center justify-center transition-all duration-700 ${overallProgress >= 100 ? "shadow-[0_0_30px_rgba(16,185,129,0.3)] scale-110" : "shadow-[0_0_20px_rgba(255,31,31,0.1)]"}`}>
-                  <svg className="w-full h-full transform -rotate-90 absolute inset-0" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="44" fill="transparent" stroke="currentColor" strokeWidth="8" className="text-white/5" />
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90 drop-shadow-xl absolute inset-0" viewBox="0 0 100 100">
+                    <defs>
+                      <linearGradient id="courseProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        {overallProgress >= 100 ? (
+                          <>
+                            <stop offset="0%" stopColor="#34d399" />
+                            <stop offset="50%" stopColor="#10b981" />
+                            <stop offset="100%" stopColor="#047857" />
+                          </>
+                        ) : (
+                          <>
+                            <stop offset="0%" stopColor="#f87171" />
+                            <stop offset="50%" stopColor="#ef4444" />
+                            <stop offset="100%" stopColor="#b91c1c" />
+                          </>
+                        )}
+                      </linearGradient>
+                      <filter id="courseGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    </defs>
+
                     <motion.circle 
-                      cx="50" 
-                      cy="50" 
-                      r="44" 
-                      fill="transparent" 
-                      stroke="currentColor" 
-                      strokeWidth="8" 
+                      cx="50" cy="50" r="48" 
+                      fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3"
+                      className="text-white/20"
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                      style={{ originX: "50px", originY: "50px" }}
+                    />
+
+                    <motion.circle 
+                      cx="50" cy="50" r="38" 
+                      fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4"
+                      className={overallProgress >= 100 ? "text-emerald-500/30" : "text-primary/30"}
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                      style={{ originX: "50px", originY: "50px" }}
+                    />
+
+                    <circle cx="50" cy="50" r="44" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-white/5" />
+                    <motion.circle 
+                      cx="50" cy="50" r="44"
+                      fill="transparent" stroke="url(#courseProgressGradient)" strokeWidth="6" strokeLinecap="round"
                       strokeDasharray="276"
-                      strokeDashoffset={276 - (276 * overallProgress) / 100}
-                      className={overallProgress >= 100 ? "text-emerald-500" : "text-primary"}
+                      filter="url(#courseGlow)"
                       initial={{ strokeDashoffset: 276 }}
                       animate={{ strokeDashoffset: 276 - (276 * overallProgress) / 100 }}
-                      transition={{ duration: 1.5, ease: "circOut" }}
+                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
                     />
                   </svg>
                   {overallProgress >= 100 && (
                     <motion.div
                       initial={{ scale: 0, rotate: -45 }}
                       animate={{ scale: 1, rotate: 0 }}
-                      className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-1.5 border-2 border-background shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+                      className="absolute -top-1 -right-1 z-10 bg-emerald-500 rounded-full p-1.5 border-2 border-background shadow-[0_0_15px_rgba(16,185,129,0.5)]"
                     >
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     </motion.div>
                   )}
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-4 text-sm font-medium text-foreground/60">
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
-              <Clock className="w-4 h-4" />
-              {course.totalVideos} Videos
-            </span>
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
-              <Calendar className="w-4 h-4" />
-              {blocks.length} Days Planned
-            </span>
           </div>
         </div>
 

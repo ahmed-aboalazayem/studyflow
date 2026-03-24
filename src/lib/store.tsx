@@ -13,7 +13,8 @@ import {
   toggleItem as toggleItemAction,
   toggleAllInBlockAction,
   updateBlockTitle as updateBlockTitleAction,
-  deleteAccount as deleteAccountAction
+  deleteAccount as deleteAccountAction,
+  toggleItemImportant as toggleItemImportantAction
 } from "@/app/actions"
 
 export interface Course {
@@ -45,6 +46,7 @@ interface StoreState {
   deleteAccount: () => Promise<any>
   recentlySharedWith: string[]
   addRecentlyShared: (username: string) => void
+  toggleItemImportant: (itemId: string, isImportant: boolean) => Promise<void>
 }
 
 const StoreContext = React.createContext<StoreState | undefined>(undefined)
@@ -78,6 +80,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           id: i.id,
           title: i.title,
           duration: i.duration,
+          isImportant: i.isImportant || false,
           completed: i.progress && i.progress.length > 0 ? i.progress[0].completed : false,
           updatedAt: i.updatedAt,
           progress: i.progress
@@ -324,12 +327,53 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchCourses()
   }, [fetchCourses])
 
+  const toggleItemImportant = React.useCallback(async (itemId: string, isImportant: boolean) => {
+    let targetCourseId: string | undefined;
+    for (const [id, blocks] of Object.entries(courseDetails)) {
+      if (blocks.some(b => b.items.some(i => i.id === itemId))) {
+        targetCourseId = id;
+        break;
+      }
+    }
+
+    if (!targetCourseId) {
+      await toggleItemImportantAction(itemId, isImportant)
+      await fetchCourses()
+      return
+    }
+
+    // Optimistic Update
+    setCourseDetails(prev => {
+      const courseBlocks = prev[targetCourseId!];
+      if (!courseBlocks) return prev;
+
+      const nextBlocks = courseBlocks.map(block => {
+        const itemIdx = block.items.findIndex(i => i.id === itemId);
+        if (itemIdx === -1) return block;
+        const nextItems = [...block.items];
+        nextItems[itemIdx] = { ...nextItems[itemIdx], isImportant };
+        return { ...block, items: nextItems };
+      });
+
+      return { ...prev, [targetCourseId!]: nextBlocks };
+    });
+
+    try {
+      const result = await toggleItemImportantAction(itemId, isImportant)
+      if ('error' in result) throw new Error(result.error)
+      await fetchCourses()
+    } catch (err) {
+      console.error("Failed to toggle important", err)
+      await fetchCourses()
+    }
+  }, [courseDetails, fetchCourses])
+
   return (
     <StoreContext.Provider value={{
       courses, courseDetails, isLoaded,
       addCourse, updateCourseBlocks,
       fetchCourses, fetchCourseDetail,
-      addDayBlock, addItemsToBlock, toggleItem, toggleAllInBlock, updateBlockTitle,
+      addDayBlock, addItemsToBlock, toggleItem, toggleAllInBlock, updateBlockTitle, toggleItemImportant,
       deleteCourse, deleteDayBlock, deleteAccount,
       recentlySharedWith, addRecentlyShared
     }}>

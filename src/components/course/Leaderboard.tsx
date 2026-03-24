@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
-import { Trophy, Medal, Target, Users } from "lucide-react"
+import { Trophy, Medal, Target, Users, Crown } from "lucide-react"
 
 interface LeaderboardUser {
   username: string
@@ -85,36 +85,43 @@ export const Leaderboard = React.memo(({ data, loading }: LeaderboardProps) => {
               transition={{ delay: index * 0.1 }}
               className={`group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 will-change-transform ${
                 isFirst 
-                  ? "bg-primary/10 border-primary/30 shadow-[0_0_20px_rgba(255,31,31,0.1)]" 
+                  ? "bg-gradient-to-r from-amber-500/20 to-amber-900/20 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02] z-10" 
                   : "bg-white/5 border-white/5 hover:border-white/20 group-hover:bg-white/[0.07]"
               }`}
             >
               <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden bg-white/5 border border-white/10">
-                  {user.imageUrl ? (
-                    <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className={`flex items-center justify-center w-full h-full font-bold text-lg ${
-                      isFirst ? "bg-primary text-white" : "text-foreground/40"
-                    }`}>
-                      {isFirst ? <Medal className="w-5 h-5" /> : index + 1}
+                <div className="relative">
+                  {isFirst && (
+                    <div className="absolute -top-4 -right-3 rotate-[15deg] z-20 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse">
+                      <Crown className="w-8 h-8 fill-amber-400" />
                     </div>
                   )}
+                  <div className={`flex items-center justify-center w-12 h-12 rounded-xl overflow-hidden bg-white/5 border-2 ${isFirst ? 'border-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.4)]' : 'border-white/10'}`}>
+                    {user.imageUrl ? (
+                      <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className={`flex items-center justify-center w-full h-full font-bold text-lg ${
+                        isFirst ? "bg-gradient-to-br from-amber-400 to-amber-600 text-white" : "text-foreground/40"
+                      }`}>
+                        {isFirst ? <Medal className="w-6 h-6 text-white drop-shadow-md" /> : index + 1}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div>
-                  <div className="font-bold text-white group-hover:text-primary transition-colors">
+                  <div className={`font-bold transition-colors ${isFirst ? 'text-amber-400 text-lg drop-shadow-[0_0_10px_rgba(245,158,11,0.4)]' : 'text-white group-hover:text-primary'}`}>
                     {user.displayName || user.username}
                   </div>
                   <div className="text-xs text-foreground/40 font-medium flex items-center gap-2 mt-0.5">
-                    <Target className="w-3 h-3 text-emerald-500/50" />
+                    <Target className={`w-3 h-3 ${isFirst ? 'text-amber-500' : 'text-emerald-500/50'}`} />
                     {user.completedCount} lessons completed
                   </div>
                 </div>
               </div>
 
               <div className="text-right">
-                <div className={`font-mono font-bold ${isFirst ? "text-primary text-lg" : "text-white"}`}>
+                <div className={`font-mono font-bold ${isFirst ? "text-amber-400 text-xl drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "text-white text-lg"}`}>
                   {formatMinutesToFriendly(user.totalMinutes)}
                 </div>
                 {!isFirst && diffToFirst > 0 && (

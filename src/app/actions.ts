@@ -341,6 +341,21 @@ export async function toggleItem(itemId: string, completed: boolean) {
   return { success: true }
 }
 
+export async function toggleItemImportant(itemId: string, isImportant: boolean) {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  const item = await prisma.item.update({
+    where: { id: itemId },
+    data: { isImportant },
+    include: { dayBlock: true }
+  })
+
+  // @ts-ignore
+  revalidatePath(`/course/${item.dayBlock?.courseId || ''}`)
+  return { success: true }
+}
+
 export async function toggleAllInBlockAction(blockId: string, completed: boolean) {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }

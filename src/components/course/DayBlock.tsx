@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Edit2, Play, CheckCircle2, Clock, Trash2 } from "lucide-react"
+import { Plus, Edit2, Play, CheckCircle2, Clock, Trash2, Star } from "lucide-react"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -44,7 +44,7 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
   const [pasteText, setPasteText] = React.useState("")
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
 
-  const { updateBlockTitle, addItemsToBlock, toggleItem: storeToggleItem, toggleAllInBlock, deleteDayBlock } = useStore()
+  const { updateBlockTitle, addItemsToBlock, toggleItem: storeToggleItem, toggleAllInBlock, deleteDayBlock, toggleItemImportant } = useStore()
   const params = useParams()
   const courseId = params.id as string
 
@@ -114,6 +114,16 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
     }
   }
 
+  const doToggleImportant = async (id: string, isImportant: boolean) => {
+    try {
+      if (toggleItemImportant) {
+        await toggleItemImportant(id, isImportant)
+      }
+    } catch (err) {
+      console.error("Failed to toggle important", err)
+    }
+  }
+
   const progress = block.items.length === 0 
     ? 0 
     : Math.round((block.items.filter(i => i.completed).length / block.items.length) * 100)
@@ -122,6 +132,9 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
     return block.items.reduce((acc, item) => acc + parseDurationToSeconds(item.duration), 0)
   }, [block.items])
   const blockFormattedTime = formatSecondsToDuration(blockDurationSeconds)
+
+  const importantCount = React.useMemo(() => block.items.filter(i => i.isImportant).length, [block.items])
+  const isKingMood = importantCount > 0
 
   const [isOpen, setIsOpen] = React.useState(false)
 
@@ -133,7 +146,7 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
   }
 
   return (
-    <Card className="mb-8 border-white/5 bg-black/20 overflow-hidden group/card transition-all hover:border-white/10 will-change-[border-color]">
+    <Card className={`mb-8 overflow-hidden group/card transition-all will-change-[border-color] ${isKingMood ? 'border-amber-500/40 bg-amber-500/5 shadow-[0_0_40px_rgba(245,158,11,0.15)] hover:border-amber-500/60' : 'border-white/5 bg-black/20 hover:border-white/10'}`}>
       {/* Accordion Header */}
       <div 
         className="p-6 cursor-pointer select-none"
@@ -156,13 +169,13 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
                 <h2 className="text-xl font-bold text-white tracking-tight">{block.title}</h2>
                 <button 
                   onClick={(e) => { e.stopPropagation(); setIsEditingTitle(true); }}
-                  className="p-1.5 rounded-md opacity-0 group-hover/title:opacity-100 transition-opacity hover:bg-white/10 text-foreground/60 hover:text-white"
+                  className="p-1.5 rounded-md opacity-20 group-hover/title:opacity-100 transition-opacity hover:bg-white/10 text-foreground/60 hover:text-white shrink-0"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleDeleteBlock(); }}
-                  className="p-1.5 rounded-md opacity-0 group-hover/title:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground/40 hover:text-red-500"
+                  className="p-1.5 rounded-md opacity-20 group-hover/title:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground/40 hover:text-red-500 shrink-0"
                   title="Delete Day"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -170,17 +183,23 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
               </div>
             )}
             
-            <div className="flex items-center gap-4 mt-2 text-sm text-foreground/60">
-              <span className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-3 text-xs md:text-sm text-foreground/60">
+              <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${isKingMood ? 'bg-amber-500/10 text-amber-500/80' : 'bg-white/5'}`}>
                 <Play className="w-3.5 h-3.5 text-primary" />
                 {block.items.length} Videos
               </span>
-              <span className="flex items-center gap-1.5 font-mono">
+              {isKingMood && (
+                <span className="flex items-center gap-1.5 bg-amber-500/20 text-amber-400 px-2 py-1 rounded-md font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                  <Star className="w-3.5 h-3.5 fill-amber-400" />
+                  {importantCount} Important
+                </span>
+              )}
+              <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-mono ${isKingMood ? 'bg-amber-500/10 text-amber-500/80' : 'bg-white/5'}`}>
                 <Clock className="w-3.5 h-3.5" />
                 {blockFormattedTime}
               </span>
-              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <CheckCircle2 className="w-3.5 h-3.5 " />
+              <span className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 {progress}% Complete
               </span>
               
@@ -191,7 +210,7 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
                     const allDone = block.items.every(i => i.completed);
                     toggleAllInBlock(block.id, !allDone);
                   }}
-                  className="ml-2 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 hover:border-primary/50 hover:text-white transition-all active:scale-95 flex items-center gap-1.5 group/btn"
+                  className="md:ml-2 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 hover:border-primary/50 hover:text-white transition-all active:scale-95 flex items-center gap-1.5 group/btn"
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${block.items.every(i => i.completed) ? "bg-emerald-500" : "bg-primary shadow-[0_0_5px_rgba(255,31,31,0.5)]"}`} />
                   {block.items.every(i => i.completed) ? "Uncheck All" : "Check All"}
@@ -239,7 +258,8 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
                       key={item.id} 
                       item={item} 
                       index={index}
-                      onToggle={toggleItem} 
+                      onToggle={toggleItem}
+                      onToggleImportant={doToggleImportant} 
                     />
                   ))}
                 </AnimatePresence>

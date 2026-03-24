@@ -91,7 +91,7 @@ export const Footer = React.memo(function Footer() {
             label="GitHub"
           />
           <SocialLink 
-            href="https://ahmed-aboalazayem.github.io/DEPI-portfolio/" 
+            href="https://ahmed-aboalazayem.github.io/ahmed_aboalazayem/" 
             icon={<Globe className="w-5 h-5" />} 
             label="Portfolio"
           />

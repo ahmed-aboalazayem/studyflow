@@ -207,21 +207,60 @@ export default function ProgressPage() {
                 <Card className="h-full bg-white/5 border-white/10 flex flex-col items-center justify-center p-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
                   <h3 className="text-lg font-semibold text-white mb-8 w-full text-left">Overall Completion</h3>
-                  <div className="relative w-48 h-48 flex items-center justify-center mb-6">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" strokeWidth="8" className="text-white/10" />
+                  <div className="relative w-56 h-56 flex items-center justify-center mb-6">
+                    <svg className="w-full h-full transform -rotate-90 drop-shadow-2xl" viewBox="0 0 100 100">
+                      <defs>
+                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#f87171" />
+                          <stop offset="50%" stopColor="#ef4444" />
+                          <stop offset="100%" stopColor="#b91c1c" />
+                        </linearGradient>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feGaussianBlur stdDeviation="3" result="blur" />
+                          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                      </defs>
+
+                      {/* Outer faint dashed ring */}
                       <motion.circle 
-                        cx="50" cy="50" r="46"
-                        fill="transparent" stroke="currentColor" strokeWidth="8"
-                        strokeDasharray="289"
-                        className="text-primary drop-shadow-[0_0_15px_rgba(255,31,31,0.5)]"
-                        initial={{ strokeDashoffset: 289 }}
-                        animate={{ strokeDashoffset: 289 - (289 * overallProgress) / 100 }}
-                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                        cx="50" cy="50" r="48" 
+                        fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3"
+                        className="text-white/20"
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                        style={{ originX: "50px", originY: "50px" }}
+                      />
+
+                      {/* Inner rotating dashed ring */}
+                      <motion.circle 
+                        cx="50" cy="50" r="38" 
+                        fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4"
+                        className="text-primary/30"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                        style={{ originX: "50px", originY: "50px" }}
+                      />
+
+                      <circle cx="50" cy="50" r="44" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-white/5" />
+                      <motion.circle 
+                        cx="50" cy="50" r="44"
+                        fill="transparent" stroke="url(#progressGradient)" strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray="276"
+                        filter="url(#glow)"
+                        initial={{ strokeDashoffset: 276 }}
+                        animate={{ strokeDashoffset: 276 - (276 * overallProgress) / 100 }}
+                        transition={{ duration: 2, ease: "easeOut", delay: 0.2 }}
                       />
                     </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-5xl font-black text-white">{overallProgress}%</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full">
+                      <motion.span 
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.5, duration: 0.6, type: "spring", bounce: 0.5 }}
+                        className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                      >
+                        {overallProgress}%
+                      </motion.span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-center text-foreground/80 bg-black/20 px-4 py-2 rounded-full border border-white/5">
