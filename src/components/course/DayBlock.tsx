@@ -123,13 +123,26 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
   }, [block.items])
   const blockFormattedTime = formatSecondsToDuration(blockDurationSeconds)
 
+  const [isOpen, setIsOpen] = React.useState(false)
+
+  const toggleAccordion = (e: React.MouseEvent) => {
+    // Prevent toggling if clicking on buttons or inputs
+    const target = e.target as HTMLElement
+    if (target.closest('button') || target.closest('input') || isEditingTitle) return
+    setIsOpen(!isOpen)
+  }
+
   return (
-    <Card className="mb-8 border-white/5 bg-black/20">
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-6">
+    <Card className="mb-8 border-white/5 bg-black/20 overflow-hidden group/card transition-all hover:border-white/10">
+      {/* Accordion Header */}
+      <div 
+        className="p-6 cursor-pointer select-none"
+        onClick={toggleAccordion}
+      >
+        <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             {isEditingTitle ? (
-              <form onSubmit={handleTitleSubmit} className="flex items-center gap-2">
+              <form onSubmit={handleTitleSubmit} className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                 <input
                   ref={titleInputRef}
                   value={titleInput}
@@ -139,17 +152,17 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
                 />
               </form>
             ) : (
-              <div className="flex items-center gap-3 group">
+              <div className="flex items-center gap-3 group/title">
                 <h2 className="text-xl font-bold text-white tracking-tight">{block.title}</h2>
                 <button 
-                  onClick={() => setIsEditingTitle(true)}
-                  className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10 text-foreground/60 hover:text-white"
+                  onClick={(e) => { e.stopPropagation(); setIsEditingTitle(true); }}
+                  className="p-1.5 rounded-md opacity-0 group-hover/title:opacity-100 transition-opacity hover:bg-white/10 text-foreground/60 hover:text-white"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button 
-                  onClick={handleDeleteBlock}
-                  className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground/40 hover:text-red-500"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteBlock(); }}
+                  className="p-1.5 rounded-md opacity-0 group-hover/title:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground/40 hover:text-red-500"
                   title="Delete Day"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -159,77 +172,105 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
             
             <div className="flex items-center gap-4 mt-2 text-sm text-foreground/60">
               <span className="flex items-center gap-1.5">
-                <Play className="w-3.5 h-3.5" />
+                <Play className="w-3.5 h-3.5 text-primary" />
                 {block.items.length} Videos
               </span>
               <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" />
                 {blockFormattedTime}
               </span>
-              <span className="flex items-center gap-1.5 text-primary">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1.5 text-emerald-400">
+                <CheckCircle2 className="w-3.5 h-3.5 " />
                 {progress}% Complete
               </span>
             </div>
           </div>
+
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-2 rounded-full bg-white/5 text-foreground/40 group-hover/card:text-white group-hover/card:bg-white/10"
+          >
+            <Plus className="w-5 h-5" />
+          </motion.div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mb-8">
+        {/* Improved Progress Bar in Header */}
+        <div className="relative w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
           <motion.div
-            initial={{ width: 0 }}
+            initial={false}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="h-full bg-gradient-to-r from-primary to-accent shadow-[0_0_10px_rgba(255,31,31,0.5)]"
+            transition={{ duration: 1, ease: "circOut" }}
+            className={`h-full bg-gradient-to-r ${progress >= 100 ? "from-emerald-500 to-teal-400" : "from-primary to-accent"} shadow-[0_0_10px_rgba(255,31,31,0.5)]`}
           />
         </div>
+      </div>
 
-        {/* Items List */}
-        <div className="space-y-3 mb-6">
-          <AnimatePresence mode="popLayout">
-            {block.items.map((item, index) => (
-              <ChecklistItem 
-                key={item.id} 
-                item={item} 
-                index={index}
-                onToggle={toggleItem} 
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {/* Bulk Paste Area */}
-        {isPasting ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white/5 border border-primary/30 rounded-xl p-4 space-y-3"
+      {/* Accordion Content */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <textarea
-              value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
-              placeholder={"Paste syllabus here...\nReact Basics - 10:30\nHooks Deep Dive - 15:45"}
-              className="w-full h-32 bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setIsPasting(false)}>Cancel</Button>
-              <Button size="sm" onClick={handleProcessPaste} className="gap-1.5">
-                <Plus className="w-4 h-4" />
-                Generate List
-              </Button>
+            <div className="px-6 pb-6 pt-2 border-t border-white/5">
+              {/* Items List */}
+              <div className="space-y-3 mb-6">
+                <AnimatePresence mode="popLayout">
+                  {block.items.map((item, index) => (
+                    <ChecklistItem 
+                      key={item.id} 
+                      item={item} 
+                      index={index}
+                      onToggle={toggleItem} 
+                    />
+                  ))}
+                </AnimatePresence>
+                
+                {block.items.length === 0 && !isPasting && (
+                  <div className="text-center py-8 text-foreground/40 border-2 border-dashed border-white/5 rounded-xl">
+                    No videos added yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Bulk Paste Area */}
+              {isPasting ? (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/5 border border-primary/30 rounded-xl p-4 space-y-3"
+                >
+                  <textarea
+                    value={pasteText}
+                    onChange={(e) => setPasteText(e.target.value)}
+                    placeholder={"Paste syllabus here...\nReact Basics - 10:30\nHooks Deep Dive - 15:45"}
+                    className="w-full h-32 bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setIsPasting(false)}>Cancel</Button>
+                    <Button size="sm" onClick={handleProcessPaste} className="gap-1.5">
+                      <Plus className="w-4 h-4" />
+                      Generate List
+                    </Button>
+                  </div>
+                </motion.div>
+              ) : (
+                <Button 
+                  variant="glass" 
+                  className="w-full border-dashed border-2 bg-transparent hover:bg-white/5 py-6 text-foreground/60 transition-all hover:text-white"
+                  onClick={() => setIsPasting(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Videos (Bulk Paste)
+                </Button>
+              )}
             </div>
           </motion.div>
-        ) : (
-          <Button 
-            variant="glass" 
-            className="w-full border-dashed border-2 bg-transparent hover:bg-white/5 py-6 text-foreground/60"
-            onClick={() => setIsPasting(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Videos (Bulk Paste)
-          </Button>
         )}
-      </div>
+      </AnimatePresence>
 
       <Modal 
         isOpen={showDeleteModal}
