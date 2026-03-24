@@ -11,6 +11,7 @@ import {
   deleteDayBlock as deleteDayBlockAction,
   addItemsToBlock as addItemsToBlockAction,
   toggleItem as toggleItemAction,
+  toggleAllInBlockAction,
   updateBlockTitle as updateBlockTitleAction,
   deleteAccount as deleteAccountAction
 } from "@/app/actions"
@@ -37,6 +38,7 @@ interface StoreState {
   addDayBlock: (courseId: string, title: string) => Promise<DayBlockData>
   addItemsToBlock: (blockId: string, items: { title: string; duration: string }[]) => Promise<any>
   toggleItem: (itemId: string, completed: boolean) => Promise<void>
+  toggleAllInBlock: (blockId: string, completed: boolean) => Promise<void>
   updateBlockTitle: (blockId: string, title: string) => Promise<void>
   deleteCourse: (courseId: string) => Promise<void>
   deleteDayBlock: (courseId: string, blockId: string) => Promise<void>
@@ -227,6 +229,70 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [courseDetails, fetchCourses])
 
+  const toggleAllInBlock = React.useCallback(async (blockId: string, completed: boolean) => {
+    // 1. Find courseId first
+    let targetCourseId: string | undefined;
+    for (const [id, blocks] of Object.entries(courseDetails)) {
+      if (blocks.some(b => b.id === blockId)) {
+        targetCourseId = id;
+        break;
+      }
+    }
+
+    if (!targetCourseId) {
+      await toggleAllInBlockAction(blockId, completed)
+      await fetchCourses()
+      return
+    }
+
+    // 2. Optimistic Update Course Details
+    setCourseDetails(prev => {
+      const courseBlocks = prev[targetCourseId!];
+      if (!courseBlocks) return prev;
+
+      const nextBlocks = courseBlocks.map(block => {
+        if (block.id !== blockId) return block;
+        return {
+          ...block,
+          items: block.items.map(item => ({ ...item, completed }))
+        };
+      });
+
+      return { ...prev, [targetCourseId!]: nextBlocks };
+    });
+
+    // 3. Optimistic Update Courses List (Progress)
+    setCourses(prev => prev.map(c => {
+      if (c.id !== targetCourseId) return c;
+      
+      const blocks = courseDetails[targetCourseId!];
+      const targetBlock = blocks.find(b => b.id === blockId);
+      if (!targetBlock) return c;
+
+      // Calculate how many were completed in this block before the change
+      const previousBlockCompleted = targetBlock.items.filter(i => i.completed).length;
+      const nextBlockCompleted = completed ? targetBlock.items.length : 0;
+      const delta = nextBlockCompleted - previousBlockCompleted;
+
+      const nextCompleted = Math.max(0, Math.min(c.totalVideos, c.completedVideos + delta));
+      return {
+        ...c,
+        completedVideos: nextCompleted,
+        progress: c.totalVideos === 0 ? 0 : Math.round((nextCompleted / c.totalVideos) * 100)
+      };
+    }));
+
+    // 4. Server Update
+    try {
+      const result = await toggleAllInBlockAction(blockId, completed)
+      if ('error' in result) throw new Error(result.error)
+      await fetchCourses()
+    } catch (err) {
+      console.error("Failed to toggle all in block", err)
+      await fetchCourses()
+    }
+  }, [courseDetails, fetchCourses])
+
   const updateBlockTitle = React.useCallback(async (blockId: string, title: string) => {
     // Optimistic Update
     setCourseDetails(prev => {
@@ -263,7 +329,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       courses, courseDetails, isLoaded,
       addCourse, updateCourseBlocks,
       fetchCourses, fetchCourseDetail,
-      addDayBlock, addItemsToBlock, toggleItem, updateBlockTitle,
+      addDayBlock, addItemsToBlock, toggleItem, toggleAllInBlock, updateBlockTitle,
       deleteCourse, deleteDayBlock, deleteAccount,
       recentlySharedWith, addRecentlyShared
     }}>

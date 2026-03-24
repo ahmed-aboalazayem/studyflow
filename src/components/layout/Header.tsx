@@ -13,7 +13,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur-md">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur-sm">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         
         {/* Logo */}

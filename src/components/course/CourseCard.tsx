@@ -24,7 +24,7 @@ interface CourseCardProps {
   course: CourseData
 }
 
-export function CourseCard({ course }: CourseCardProps) {
+export const CourseCard = React.memo(({ course }: CourseCardProps) => {
   const { deleteCourse } = useStore()
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
 
@@ -39,10 +39,11 @@ export function CourseCard({ course }: CourseCardProps) {
       <motion.div
         whileHover={{ y: -8, scale: 1.02 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="will-change-transform"
       >
         <Card className="h-full border border-white/5 hover:border-primary/50 transition-all duration-500 shadow-xl hover:shadow-[0_0_40px_rgba(255,31,31,0.2)] bg-black/20 backdrop-blur-xl overflow-hidden group relative">
           {/* Subtle Glow Effect */}
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur" />
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur will-change-opacity" />
           
           <div className="relative h-40 sm:h-48 w-full overflow-hidden bg-white/5">
             {course.imageUrl ? (
@@ -50,7 +51,7 @@ export function CourseCard({ course }: CourseCardProps) {
                 src={course.imageUrl}
                 alt={course.title}
                 fill
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                className="object-cover transition-transform duration-700 group-hover:scale-110 will-change-transform"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-white/10">
@@ -114,7 +115,7 @@ export function CourseCard({ course }: CourseCardProps) {
       />
     </Link>
   )
-}
+})
 export function CourseCardSkeleton() {
   return (
     <Card className="h-full border border-white/5 bg-black/20 backdrop-blur-xl overflow-hidden animate-pulse">

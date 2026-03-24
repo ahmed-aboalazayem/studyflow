@@ -19,14 +19,14 @@ interface ChecklistItemProps {
   index: number
 }
 
-export function ChecklistItem({ item, onToggle, index }: ChecklistItemProps) {
+export const ChecklistItem = React.memo(({ item, onToggle, index }: ChecklistItemProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       whileHover={{ scale: 1.01 }}
-      className={`group relative flex items-center gap-4 p-4 rounded-xl border transition-all ${
+      className={`group relative flex items-center gap-4 p-4 rounded-xl border transition-all will-change-transform ${
         item.completed 
           ? "bg-emerald-500/5 border-emerald-500/20" 
           : "bg-white/5 border-white/10 hover:border-white/20"
@@ -34,7 +34,7 @@ export function ChecklistItem({ item, onToggle, index }: ChecklistItemProps) {
     >
       <button
         onClick={() => onToggle(item.id, !item.completed)}
-        className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
+        className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all will-change-transform ${
           item.completed
             ? "bg-emerald-500 border-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]"
             : "border-muted-foreground bg-transparent hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
@@ -44,6 +44,7 @@ export function ChecklistItem({ item, onToggle, index }: ChecklistItemProps) {
           initial={false}
           animate={{ scale: item.completed ? 1 : 0, opacity: item.completed ? 1 : 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          className="will-change-transform"
         >
           <Check className="h-4 w-4" strokeWidth={3} />
         </motion.div>
@@ -69,7 +70,7 @@ export function ChecklistItem({ item, onToggle, index }: ChecklistItemProps) {
 
       {item.completed && (
         <motion.div
-          className="absolute inset-0 rounded-xl bg-emerald-500/10 pointer-events-none"
+          className="absolute inset-0 rounded-xl bg-emerald-500/10 pointer-events-none will-change-opacity"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 0.4 }}
@@ -77,4 +78,4 @@ export function ChecklistItem({ item, onToggle, index }: ChecklistItemProps) {
       )}
     </motion.div>
   )
-}
+})

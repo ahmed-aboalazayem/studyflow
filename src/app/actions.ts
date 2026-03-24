@@ -341,6 +341,48 @@ export async function toggleItem(itemId: string, completed: boolean) {
   return { success: true }
 }
 
+export async function toggleAllInBlockAction(blockId: string, completed: boolean) {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  // 1. Find all items in the block
+  const items = await prisma.item.findMany({
+    where: { blockId },
+    select: { id: true }
+  })
+
+  // 2. Bulk upsert progress for all items
+  await prisma.$transaction(
+    items.map(item => prisma.itemProgress.upsert({
+      where: {
+        userId_itemId: { 
+          userId: session.id,
+          itemId: item.id 
+        }
+      },
+      update: { completed },
+      create: {
+        userId: session.id,
+        itemId: item.id,
+        completed
+      }
+    }))
+  )
+
+  // 3. Find courseId for revalidation
+  const block = await prisma.dayBlock.findUnique({
+    where: { id: blockId },
+    select: { courseId: true }
+  })
+  
+  if (block) {
+    revalidatePath(`/course/${block.courseId}`)
+  }
+  revalidatePath('/progress')
+  
+  return { success: true }
+}
+
 export async function shareCourse(courseId: string, targetUsername: string) {
   const session = await getSession()
   if (!session) return { error: 'Unauthorized' }
@@ -430,6 +472,8 @@ export async function getLeaderboard(courseId: string) {
 
     return {
       username: u.username,
+      displayName: u.displayName,
+      imageUrl: u.imageUrl,
       totalMinutes: Math.floor(totalSeconds / 60),
       completedCount: progress.length
     }

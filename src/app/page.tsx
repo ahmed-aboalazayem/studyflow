@@ -57,7 +57,7 @@ export default function Home() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-gradient pb-1">
-              My Courses
+              {user ? `Welcome back, ${user.displayName || user.username}` : 'My Courses'}
             </h1>
             <p className="text-foreground/40 text-lg font-medium">
               Elevate your knowledge, one lesson at a time.

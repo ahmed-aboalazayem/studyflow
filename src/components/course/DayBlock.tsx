@@ -22,7 +22,7 @@ interface DayBlockProps {
   onChange?: (block: DayBlockData) => void
 }
 
-export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
+export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockProps) => {
   const [block, setBlockState] = React.useState(initialBlock)
 
   // Sync when parent updates the block (e.g., after API fetch)
@@ -44,7 +44,7 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
   const [pasteText, setPasteText] = React.useState("")
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
 
-  const { updateBlockTitle, addItemsToBlock, toggleItem: storeToggleItem, deleteDayBlock } = useStore()
+  const { updateBlockTitle, addItemsToBlock, toggleItem: storeToggleItem, toggleAllInBlock, deleteDayBlock } = useStore()
   const params = useParams()
   const courseId = params.id as string
 
@@ -133,7 +133,7 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
   }
 
   return (
-    <Card className="mb-8 border-white/5 bg-black/20 overflow-hidden group/card transition-all hover:border-white/10">
+    <Card className="mb-8 border-white/5 bg-black/20 overflow-hidden group/card transition-all hover:border-white/10 will-change-[border-color]">
       {/* Accordion Header */}
       <div 
         className="p-6 cursor-pointer select-none"
@@ -175,21 +175,35 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
                 <Play className="w-3.5 h-3.5 text-primary" />
                 {block.items.length} Videos
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 font-mono">
                 <Clock className="w-3.5 h-3.5" />
                 {blockFormattedTime}
               </span>
-              <span className="flex items-center gap-1.5 text-emerald-400">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
                 <CheckCircle2 className="w-3.5 h-3.5 " />
                 {progress}% Complete
               </span>
+              
+              {block.items.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const allDone = block.items.every(i => i.completed);
+                    toggleAllInBlock(block.id, !allDone);
+                  }}
+                  className="ml-2 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 hover:border-primary/50 hover:text-white transition-all active:scale-95 flex items-center gap-1.5 group/btn"
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${block.items.every(i => i.completed) ? "bg-emerald-500" : "bg-primary shadow-[0_0_5px_rgba(255,31,31,0.5)]"}`} />
+                  {block.items.every(i => i.completed) ? "Uncheck All" : "Check All"}
+                </button>
+              )}
             </div>
           </div>
 
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.3 }}
-            className="p-2 rounded-full bg-white/5 text-foreground/40 group-hover/card:text-white group-hover/card:bg-white/10"
+            className="p-2 rounded-full bg-white/5 text-foreground/40 group-hover/card:text-white group-hover/card:bg-white/10 will-change-transform"
           >
             <Plus className="w-5 h-5" />
           </motion.div>
@@ -201,7 +215,7 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
             initial={false}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 1, ease: "circOut" }}
-            className={`h-full bg-gradient-to-r ${progress >= 100 ? "from-emerald-500 to-teal-400" : "from-primary to-accent"} shadow-[0_0_10px_rgba(255,31,31,0.5)]`}
+            className={`h-full bg-gradient-to-r ${progress >= 100 ? "from-emerald-500 to-teal-400" : "from-primary to-accent"} shadow-[0_0_10px_rgba(255,31,31,0.5)] will-change-[width]`}
           />
         </div>
       </div>
@@ -214,6 +228,7 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
+            className="will-change-[height,opacity]"
           >
             <div className="px-6 pb-6 pt-2 border-t border-white/5">
               {/* Items List */}
@@ -283,7 +298,7 @@ export function DayBlock({ block: initialBlock, onChange }: DayBlockProps) {
       />
     </Card>
   )
-}
+})
 export function DayBlockSkeleton() {
   return (
     <Card className="mb-8 border-white/5 bg-black/20 animate-pulse">
