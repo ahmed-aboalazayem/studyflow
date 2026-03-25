@@ -29,9 +29,9 @@ export function Header() {
 
           {/* Nav - Desktop */}
           <nav className="hidden md:flex items-center gap-1">
-            <Link href="/">
+            <Link href="/dashboard">
               <Button
-                variant={pathname === "/" ? "glass" : "ghost"}
+                variant={pathname === "/dashboard" ? "glass" : "ghost"}
                 size="sm"
                 className="flex items-center gap-2 rounded-lg"
               >
@@ -120,8 +120,8 @@ export function Header() {
       {isMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
           <nav className="grid grid-cols-1 gap-2">
-            <Link href="/" onClick={() => setIsMenuOpen(false)}>
-              <Button variant={pathname === "/" ? "glass" : "ghost"} className="w-full justify-start gap-3">
+            <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+              <Button variant={pathname === "/dashboard" ? "glass" : "ghost"} className="w-full justify-start gap-3">
                 <BookOpen className="w-5 h-5" />
                 Courses
               </Button>

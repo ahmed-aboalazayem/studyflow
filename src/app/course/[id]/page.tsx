@@ -124,7 +124,7 @@ export default function CourseDetailPage() {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <h1 className="text-2xl font-bold text-white mb-4">Course not found</h1>
-        <Link href="/">
+        <Link href="/dashboard">
           <Button variant="ghost">Return to Dashboard</Button>
         </Link>
       </div>
@@ -162,7 +162,7 @@ export default function CourseDetailPage() {
       
       <div className="container mx-auto px-4 py-8 max-w-7xl relative z-10">
         <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-foreground/40 hover:text-primary transition-colors group">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-foreground/40 hover:text-primary transition-colors group">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Dashboard
           </Link>

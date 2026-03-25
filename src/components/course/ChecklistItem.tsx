@@ -3,6 +3,7 @@
 import * as React from "react"
 import { motion } from "framer-motion"
 import { Check, Clock } from "lucide-react"
+import { playSound } from "@/lib/sounds"
 
 export interface ChecklistItemData {
   id: string
@@ -22,6 +23,12 @@ interface ChecklistItemProps {
 }
 
 export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, index }: ChecklistItemProps) => {
+  const handleCheckToggle = React.useCallback(() => {
+    if (!item.completed) playSound('taskComplete')
+    else playSound('taskUndo')
+    onToggle(item.id, !item.completed)
+  }, [item.id, item.completed, onToggle])
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -50,7 +57,7 @@ export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, in
         </svg>
       </button>
       <button
-        onClick={() => onToggle(item.id, !item.completed)}
+        onClick={handleCheckToggle}
         className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all will-change-transform ${
           item.completed
             ? "bg-emerald-500 border-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]"
@@ -76,7 +83,7 @@ export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, in
                 ? "text-foreground/50 font-medium line-through" 
                 : "text-foreground font-medium group-hover:text-white"
           }`}
-          onClick={() => onToggle(item.id, !item.completed)}
+          onClick={handleCheckToggle}
         >
           {item.title}
         </label>

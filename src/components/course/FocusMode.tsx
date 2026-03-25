@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Timer, Play, Pause, RotateCcw, X, Coffee, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/Modal"
+import { playSound } from "@/lib/sounds"
 
 export function FocusMode() {
   const [isActive, setIsActive] = React.useState(false)
@@ -30,6 +31,8 @@ export function FocusMode() {
       setTimeLeft(nextMode === 'work' ? 25 * 60 : 5 * 60)
       setIsActive(false)
       
+      playSound('timerFinish')
+
       setModal({
         isOpen: true,
         title: mode === 'work' ? "Focus Session Complete!" : "Break Over!",
@@ -40,7 +43,10 @@ export function FocusMode() {
     return () => clearInterval(interval)
   }, [isActive, timeLeft, mode])
 
-  const toggleTimer = () => setIsActive(!isActive)
+  const toggleTimer = () => {
+    if (!isActive) playSound('timerStart')
+    setIsActive(!isActive)
+  }
   const resetTimer = () => {
     setIsActive(false)
     setTimeLeft(mode === 'work' ? 25 * 60 : 5 * 60)

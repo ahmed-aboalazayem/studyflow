@@ -75,7 +75,7 @@ export default function AddCoursePage() {
       <BackgroundEffect />
       
       <div className="container mx-auto px-4 py-8 relative z-10">
-        <Link href="/" className="inline-flex items-center gap-2 text-foreground/40 hover:text-primary transition-colors mb-8 group">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-foreground/40 hover:text-primary transition-colors mb-8 group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to Dashboard
         </Link>
