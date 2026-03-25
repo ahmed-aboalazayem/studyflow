@@ -14,7 +14,6 @@ import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
 import { Leaderboard } from "@/components/course/Leaderboard"
 import { getLeaderboard, shareCourse } from "@/app/actions"
 import { FocusMode } from "@/components/course/FocusMode"
-import { NoteSection } from "@/components/course/NoteSection"
 import { Modal } from "@/components/ui/Modal"
 import { LoadingState } from "@/components/ui/LoadingState"
 import { formatSecondsToDuration, parseDurationToSeconds } from "@/lib/utils"
@@ -425,8 +424,6 @@ export default function CourseDetailPage() {
             </div>
 
             <Leaderboard data={leaderboardData} loading={leaderboardLoading} />
-
-            <NoteSection courseId={courseId} />
           </div>
         </div>
       </div>

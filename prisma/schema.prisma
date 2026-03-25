@@ -15,7 +15,6 @@ model User {
   courses     Course[]
   shares    CourseShare[]
   progress  ItemProgress[]
-  notes     CourseNote[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -32,7 +31,6 @@ model Course {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   dayBlocks       DayBlock[]
   shares          CourseShare[]
-  notes           CourseNote[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -54,8 +52,8 @@ model DayBlock {
   courseId  String
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   items     Item[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Item {
@@ -81,13 +79,3 @@ model ItemProgress {
   @@id([userId, itemId])
 }
 
-model CourseNote {
-  id        String   @id @default(cuid())
-  content   String
-  courseId  String
-  userId    Int
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  updatedAt DateTime @updatedAt
-  @@unique([courseId, userId])
-}

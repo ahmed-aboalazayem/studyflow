@@ -10,6 +10,8 @@ interface LeaderboardUser {
   imageUrl?: string | null
   totalMinutes: number
   completedCount: number
+  latestVideo?: string | null
+  latestSection?: string | null
 }
 
 interface LeaderboardProps {
@@ -83,7 +85,7 @@ export const Leaderboard = React.memo(({ data, loading }: LeaderboardProps) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 will-change-transform ${
+              className={`group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 will-change-transform hover:z-50 ${
                 isFirst 
                   ? "bg-gradient-to-r from-amber-500/20 to-amber-900/20 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02] z-10" 
                   : "bg-white/5 border-white/5 hover:border-white/20 group-hover:bg-white/[0.07]"
@@ -117,6 +119,47 @@ export const Leaderboard = React.memo(({ data, loading }: LeaderboardProps) => {
                     <Target className={`w-3 h-3 ${isFirst ? 'text-amber-500' : 'text-emerald-500/50'}`} />
                     {user.completedCount} lessons completed
                   </div>
+                  {user.latestVideo && (
+                    <div className="relative group/tooltip">
+                       <div className={`text-[10px] font-medium truncate max-w-[170px] mt-1.5 flex items-center gap-1.5 cursor-help ${isFirst ? 'text-amber-200/60' : 'text-primary/40'}`}>
+                         <span className="shrink-0 w-1 h-1 rounded-full bg-current opacity-40" />
+                         <span className="italic">Latest: {user.latestVideo}</span>
+                       </div>
+                       
+                       {/* Tooltip */}
+                       <div className="absolute left-0 bottom-full mb-3 hidden group-hover/tooltip:block z-[100] animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-300">
+                         <div className="bg-black border border-white/10 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-w-[240px] backdrop-blur-2xl relative overflow-hidden">
+                            {/* Decorative Gradient Background */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                            
+                            <div className="relative z-10">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Activity Status</p>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-primary mb-1.5">Current Section</p>
+                                  <p className="text-sm font-black text-white leading-tight tracking-tight drop-shadow-sm">{user.latestSection || 'General'}</p>
+                                </div>
+
+                                <div className="h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
+
+                                <div>
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1.5">Latest Video</p>
+                                  <p className="text-xs font-bold text-white/90 italic leading-relaxed line-clamp-2 bg-white/5 p-2 rounded-lg border border-white/5">
+                                    "{user.latestVideo}"
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                         </div>
+                         {/* Arrow */}
+                         <div className="w-3 h-3 bg-black/90 border-r border-b border-white/10 rotate-45 -mt-1.5 ml-6 backdrop-blur-2xl" />
+                       </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -5,6 +5,8 @@ import { signToken, verifyToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
+import fs from 'fs/promises'
+import path from 'path'
 
 async function getSession() {
   const cookieStore = await cookies()
@@ -354,6 +356,7 @@ export async function toggleItem(itemId: string, completed: boolean) {
 
   revalidatePath(`/course/${progress.item.dayBlock.courseId}`)
   revalidatePath('/progress')
+  revalidatePath('/competition')
   return { success: true }
 }
 
@@ -410,6 +413,7 @@ export async function toggleAllInBlockAction(blockId: string, completed: boolean
     revalidatePath(`/course/${block.courseId}`)
   }
   revalidatePath('/progress')
+  revalidatePath('/competition')
   
   return { success: true }
 }
@@ -501,12 +505,31 @@ export async function getLeaderboard(courseId: string) {
       else if (parts.length === 3) totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2]
     })
 
+    const latestProgress = await prisma.itemProgress.findFirst({
+      where: { 
+        userId: u.id,
+        item: { dayBlock: { courseId } },
+        completed: true 
+      },
+      orderBy: { updatedAt: 'desc' },
+      include: { 
+        item: {
+          include: { dayBlock: { select: { title: true } } }
+        }
+      }
+    })
+    
+    const latestVideo = latestProgress?.item.title || null
+    const latestSection = latestProgress?.item.dayBlock.title || null
+
     return {
       username: u.username,
       displayName: u.displayName,
       imageUrl: u.imageUrl,
       totalMinutes: Math.floor(totalSeconds / 60),
-      completedCount: progress.length
+      completedCount: progress.length,
+      latestVideo,
+      latestSection
     }
   }))
 
@@ -524,39 +547,4 @@ export async function updateBlockTitle(blockId: string, title: string) {
 
   revalidatePath(`/course/${block.courseId}`)
   return { success: true }
-}
-export async function updateCourseNote(courseId: string, content: string) {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
-
-  const note = await prisma.courseNote.upsert({
-    where: {
-      courseId_userId: {
-        courseId,
-        userId: session.id
-      }
-    },
-    update: { content },
-    create: {
-      content,
-      courseId,
-      userId: session.id
-    }
-  })
-
-  return { success: true, note }
-}
-
-export async function getCourseNote(courseId: string) {
-  const session = await getSession()
-  if (!session) return null
-
-  return await prisma.courseNote.findUnique({
-    where: {
-      courseId_userId: {
-        courseId,
-        userId: session.id
-      }
-    }
-  })
 }
