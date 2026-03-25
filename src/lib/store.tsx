@@ -24,6 +24,8 @@ export interface Course {
   progress: number
   totalVideos: number
   completedVideos: number
+  totalTimeSeconds?: number
+  completedTimeSeconds?: number
   ownership?: 'owned' | 'shared'
   ownerName?: string | null
 }
@@ -67,6 +69,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       progress: c.progress,
       totalVideos: c.totalVideos,
       completedVideos: c.completedVideos,
+      totalTimeSeconds: c.totalTimeSeconds,
+      completedTimeSeconds: c.completedTimeSeconds,
       ownership: c.ownership as any,
       ownerName: c.ownerName
     }))
@@ -210,12 +214,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCourses(prev => prev.map(c => {
       if (c.id !== targetCourseId) return c;
       
-      const delta = completed ? 1 : -1;
-      const nextCompleted = Math.max(0, Math.min(c.totalVideos, c.completedVideos + delta));
+      const targetBlock = courseDetails[targetCourseId!].find(b => b.items.some(i => i.id === itemId));
+      const targetItem = targetBlock?.items.find(i => i.id === itemId);
+      let durationSecs = 0;
+      if (targetItem) {
+        const parts = targetItem.duration.split(':').map(Number);
+        if (parts.length === 2) durationSecs = parts[0]*60 + parts[1];
+        else if (parts.length === 3) durationSecs = parts[0]*3600 + parts[1]*60 + parts[2];
+      }
+      
+      const deltaCount = completed ? 1 : -1;
+      const nextCompletedCount = Math.max(0, Math.min(c.totalVideos, c.completedVideos + deltaCount));
+      const deltaSecs = completed ? durationSecs : -durationSecs;
+      const totalSecs = c.totalTimeSeconds || 0;
+      const completedSecs = Math.max(0, Math.min(totalSecs, (c.completedTimeSeconds || 0) + deltaSecs));
+      
       return {
         ...c,
-        completedVideos: nextCompleted,
-        progress: c.totalVideos === 0 ? 0 : Math.round((nextCompleted / c.totalVideos) * 100)
+        completedVideos: nextCompletedCount,
+        completedTimeSeconds: completedSecs,
+        progress: totalSecs === 0 ? 0 : Math.round((completedSecs / totalSecs) * 100)
       };
     }));
 
@@ -276,12 +294,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const previousBlockCompleted = targetBlock.items.filter(i => i.completed).length;
       const nextBlockCompleted = completed ? targetBlock.items.length : 0;
       const delta = nextBlockCompleted - previousBlockCompleted;
-
       const nextCompleted = Math.max(0, Math.min(c.totalVideos, c.completedVideos + delta));
+
+      // Calculate time delta
+      let blockTotalSecs = 0;
+      let blockCompletedSecs = 0;
+      targetBlock.items.forEach(i => {
+        let sec = 0;
+        const parts = i.duration.split(':').map(Number);
+        if (parts.length === 2) sec = parts[0]*60 + parts[1];
+        else if (parts.length === 3) sec = parts[0]*3600 + parts[1]*60 + parts[2];
+        blockTotalSecs += sec;
+        if (i.completed) blockCompletedSecs += sec;
+      });
+      const nextBlockCompletedSecs = completed ? blockTotalSecs : 0;
+      const deltaSecs = nextBlockCompletedSecs - blockCompletedSecs;
+      const totalSecs = c.totalTimeSeconds || 0;
+      const completedSecs = Math.max(0, Math.min(totalSecs, (c.completedTimeSeconds || 0) + deltaSecs));
+
       return {
         ...c,
         completedVideos: nextCompleted,
-        progress: c.totalVideos === 0 ? 0 : Math.round((nextCompleted / c.totalVideos) * 100)
+        completedTimeSeconds: completedSecs,
+        progress: totalSecs === 0 ? 0 : Math.round((completedSecs / totalSecs) * 100)
       };
     }));
 

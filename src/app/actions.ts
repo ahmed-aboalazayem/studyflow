@@ -172,15 +172,29 @@ export async function getCourses() {
 
   // Transform to include calculated fields per user
   return courses.map(course => {
+    let totalSeconds = 0
+    let completedSeconds = 0
     let totalItems = 0
     let completedItems = 0
     
     course.dayBlocks.forEach(block => {
       totalItems += block.items.length
-      completedItems += block.items.filter(item => item.progress.length > 0 && item.progress[0].completed).length
+      
+      block.items.forEach(item => {
+        const isCompleted = item.progress.length > 0 && item.progress[0].completed
+        if (isCompleted) completedItems++
+        
+        let itemSeconds = 0
+        const parts = item.duration.split(':').map(Number)
+        if (parts.length === 2) itemSeconds = parts[0] * 60 + parts[1]
+        else if (parts.length === 3) itemSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2]
+        
+        totalSeconds += itemSeconds
+        if (isCompleted) completedSeconds += itemSeconds
+      })
     })
 
-    const progress = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100)
+    const progress = totalSeconds === 0 ? 0 : Math.round((completedSeconds / totalSeconds) * 100)
     const ownership = course.userId === session.id ? 'owned' : 'shared'
 
     return {
@@ -188,6 +202,8 @@ export async function getCourses() {
       progress,
       totalVideos: totalItems,
       completedVideos: completedItems,
+      totalTimeSeconds: totalSeconds,
+      completedTimeSeconds: completedSeconds,
       ownership,
       ownerName: course.user.username
     }

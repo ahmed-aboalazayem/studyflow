@@ -19,10 +19,11 @@ export interface DayBlockData {
 
 interface DayBlockProps {
   block: DayBlockData
+  isCurrentStudy?: boolean
   onChange?: (block: DayBlockData) => void
 }
 
-export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockProps) => {
+export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentStudy = false }: DayBlockProps) => {
   const [block, setBlockState] = React.useState(initialBlock)
 
   // Sync when parent updates the block (e.g., after API fetch)
@@ -124,19 +125,24 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange }: DayBlockP
     }
   }
 
-  const progress = block.items.length === 0 
-    ? 0 
-    : Math.round((block.items.filter(i => i.completed).length / block.items.length) * 100)
-
   const blockDurationSeconds = React.useMemo(() => {
     return block.items.reduce((acc, item) => acc + parseDurationToSeconds(item.duration), 0)
   }, [block.items])
+
+  const completedDurationSeconds = React.useMemo(() => {
+    return block.items.reduce((acc, item) => item.completed ? acc + parseDurationToSeconds(item.duration) : acc, 0)
+  }, [block.items])
+
+  const progress = blockDurationSeconds === 0 
+    ? 0 
+    : Math.round((completedDurationSeconds / blockDurationSeconds) * 100)
+
   const blockFormattedTime = formatSecondsToDuration(blockDurationSeconds)
 
   const importantCount = React.useMemo(() => block.items.filter(i => i.isImportant).length, [block.items])
   const isKingMood = importantCount > 0
 
-  const [isOpen, setIsOpen] = React.useState(false)
+  const [isOpen, setIsOpen] = React.useState(isCurrentStudy)
 
   const toggleAccordion = (e: React.MouseEvent) => {
     // Prevent toggling if clicking on buttons or inputs

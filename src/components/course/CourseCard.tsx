@@ -16,6 +16,8 @@ export interface CourseData {
   progress: number
   totalVideos: number
   completedVideos: number
+  totalTimeSeconds?: number
+  completedTimeSeconds?: number
   ownership?: 'owned' | 'shared'
   ownerName?: string | null
 }

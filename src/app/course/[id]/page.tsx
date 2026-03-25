@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Clock, Calendar, Plus, Share2, X, UserPlus, CheckCircle2, Youtube, ExternalLink, ArrowRight, Trash2 } from "lucide-react"
+import { ArrowLeft, Clock, Calendar, Plus, Share2, X, UserPlus, CheckCircle2, Youtube, ExternalLink, ArrowRight, Trash2, Target } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import { FocusMode } from "@/components/course/FocusMode"
 import { NoteSection } from "@/components/course/NoteSection"
 import { Modal } from "@/components/ui/Modal"
 import { LoadingState } from "@/components/ui/LoadingState"
+import { formatSecondsToDuration, parseDurationToSeconds } from "@/lib/utils"
 
 export default function CourseDetailPage() {
   const params = useParams()
@@ -47,6 +48,15 @@ export default function CourseDetailPage() {
   }, [blocks, courseId, updateCourseBlocks])
 
   const overallProgress = course?.progress || 0
+
+  const totalCourseTime = React.useMemo(() => {
+    const totalSecs = blocks.flatMap(b => b.items).reduce((acc, item) => acc + parseDurationToSeconds(item.duration), 0)
+    return formatSecondsToDuration(totalSecs)
+  }, [blocks])
+
+  const remainingDays = React.useMemo(() => {
+    return blocks.filter(b => b.items.length > 0 && !b.items.every(i => i.completed)).length
+  }, [blocks])
   const [leaderboardData, setLeaderboardData] = React.useState<any[]>([])
   const [shareUsername, setShareUsername] = React.useState("")
   const [sharing, setSharing] = React.useState(false)
@@ -74,6 +84,44 @@ export default function CourseDetailPage() {
       fetchLeaderboard()
     }
   }, [courseId, course?.completedVideos, isLoaded, course])
+
+  const currentStudyIndex = React.useMemo(() => {
+    const idx = blocks.findIndex(block => {
+      if (block.items.length === 0) return false;
+      return !block.items.every(i => i.completed);
+    });
+    return idx === -1 ? 0 : idx;
+  }, [blocks]);
+
+  // Floating jump button logic
+  const currentStudyRef = React.useRef<HTMLDivElement>(null)
+  const [showJumpButton, setShowJumpButton] = React.useState(false)
+  const [jumpDirection, setJumpDirection] = React.useState<'up' | 'down'>('down')
+
+  React.useEffect(() => {
+    if (blocks.length === 0) return
+
+    const checkVisibility = () => {
+      if (!currentStudyRef.current) return
+      const rect = currentStudyRef.current.getBoundingClientRect()
+      const viewH = window.innerHeight
+      // If the current block is fully out of view
+      if (rect.bottom < 0 || rect.top > viewH) {
+        setShowJumpButton(true)
+        setJumpDirection(rect.top > viewH ? 'down' : 'up')
+      } else {
+        setShowJumpButton(false)
+      }
+    }
+
+    window.addEventListener('scroll', checkVisibility, { passive: true })
+    checkVisibility()
+    return () => window.removeEventListener('scroll', checkVisibility)
+  }, [blocks, currentStudyIndex])
+
+  const scrollToCurrentStudy = () => {
+    currentStudyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   if (isLoading || !isLoaded) {
     return (
@@ -200,6 +248,22 @@ export default function CourseDetailPage() {
                     <Calendar className="w-4 h-4" />
                     {blocks.length} Days Planned
                   </span>
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 sm:flex-none justify-center">
+                    <Clock className="w-4 h-4 text-primary" />
+                    {totalCourseTime} Total
+                  </span>
+                  {remainingDays > 0 && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex-1 sm:flex-none justify-center">
+                      <Calendar className="w-4 h-4" />
+                      {remainingDays} Days Left
+                    </span>
+                  )}
+                  {remainingDays === 0 && blocks.length > 0 && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex-1 sm:flex-none justify-center">
+                      <CheckCircle2 className="w-4 h-4" />
+                      All Done!
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -280,8 +344,10 @@ export default function CourseDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            {blocks.map(block => (
-              <DayBlock key={block.id} block={block} onChange={handleBlockChange} />
+            {blocks.map((block, index) => (
+              <div key={block.id} ref={index === currentStudyIndex ? currentStudyRef : undefined}>
+                <DayBlock block={block} isCurrentStudy={index === currentStudyIndex} onChange={handleBlockChange} />
+              </div>
             ))}
             
             <motion.div
@@ -361,6 +427,28 @@ export default function CourseDetailPage() {
       </div>
 
       <FocusMode />
+
+      {/* Floating jump-to-current button */}
+      <AnimatePresence>
+        {showJumpButton && currentStudyIndex !== -1 && (
+          <motion.button
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            onClick={scrollToCurrentStudy}
+            className="fixed bottom-12 right-25 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-primary text-white font-bold text-sm shadow-[0_0_30px_rgba(255,31,31,0.4)] hover:bg-primary/90 hover:shadow-[0_0_40px_rgba(255,31,31,0.6)] active:scale-95 transition-all border border-primary/60 backdrop-blur-sm"
+          >
+            <Target className="w-4 h-4" />
+            Current Day
+            {jumpDirection === 'up' ? (
+              <ArrowLeft className="w-4 h-4 rotate-90" />
+            ) : (
+              <ArrowLeft className="w-4 h-4 -rotate-90" />
+            )}
+          </motion.button>
+        )}
+      </AnimatePresence>
       
       <Modal 
         isOpen={modal.isOpen}
