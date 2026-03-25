@@ -85,7 +85,7 @@ export const Leaderboard = React.memo(({ data, loading }: LeaderboardProps) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 will-change-transform hover:z-50 ${
+              className={`group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-150 will-change-transform hover:z-50 ${
                 isFirst 
                   ? "bg-gradient-to-r from-amber-500/20 to-amber-900/20 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02] z-10" 
                   : "bg-white/5 border-white/5 hover:border-white/20 group-hover:bg-white/[0.07]"

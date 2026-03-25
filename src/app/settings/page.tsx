@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const { deleteAccount } = useStore()
   const [loading, setLoading] = React.useState(true)
   const [saving, setSaving] = React.useState(false)
+  const [isReading, setIsReading] = React.useState(false)
   const [imageUrl, setImageUrl] = React.useState("")
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
@@ -90,9 +91,20 @@ export default function SettingsPage() {
       return
     }
 
+    setIsReading(true)
     const reader = new FileReader()
     reader.onloadend = () => {
       setImageUrl(reader.result as string)
+      setIsReading(false)
+    }
+    reader.onerror = () => {
+      setIsReading(false)
+      setModal({
+        isOpen: true,
+        title: "Read Error",
+        description: "Failed to read the image file.",
+        type: "error"
+      })
     }
     reader.readAsDataURL(file)
   }
@@ -277,13 +289,18 @@ export default function SettingsPage() {
             <div className="flex gap-4">
               <Button 
                 type="submit" 
-                disabled={saving}
+                disabled={saving || isReading}
                 className="flex-1 h-14 text-lg font-black bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(255,31,31,0.2)] rounded-3xl transition-all hover:scale-[1.02] active:scale-95"
               >
                 {saving ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-                    Saving...
+                    Saving Profile...
+                  </div>
+                ) : isReading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
+                    Processing Image...
                   </div>
                 ) : (
                   <>

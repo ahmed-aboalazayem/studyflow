@@ -60,10 +60,10 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
         transition={{ type: "spring", stiffness: 300, damping: 22 }}
         className="will-change-transform h-full"
       >
-        <div className="h-full flex flex-col rounded-2xl border border-white/8 bg-black/30 backdrop-blur-xl overflow-hidden group relative shadow-xl hover:shadow-[0_8px_40px_rgba(255,31,31,0.18)] hover:border-primary/40 transition-all duration-500">
+        <div className="h-full flex flex-col rounded-2xl border border-white/8 bg-black/30 backdrop-blur-xl overflow-hidden group relative shadow-xl hover:shadow-[0_8px_40px_rgba(255,31,31,0.18)] hover:border-primary/40 transition-all duration-200">
 
           {/* Hover glow */}
-          <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/15 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0" />
+          <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/15 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-0" />
 
           {/* Thumbnail */}
           <div className="relative h-44 w-full overflow-hidden bg-white/5 shrink-0">
@@ -72,7 +72,7 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
                 src={course.imageUrl}
                 alt={course.title}
                 fill
-                className="object-cover transition-transform duration-700 group-hover:scale-108 will-change-transform"
+                className="object-cover transition-transform duration-300 group-hover:scale-108 will-change-transform"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
@@ -116,7 +116,7 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
           <div className="flex flex-col flex-1 p-5 gap-4 relative z-10">
 
             {/* Title */}
-            <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors duration-300 line-clamp-2 leading-snug tracking-tight">
+            <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors duration-200 line-clamp-2 leading-snug tracking-tight">
               {course.title}
             </h3>
 

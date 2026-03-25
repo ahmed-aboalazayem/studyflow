@@ -35,7 +35,7 @@ export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, in
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       whileHover={{ scale: 1.01 }}
-      className={`group relative flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all duration-300 will-change-transform ${
+      className={`group relative flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all duration-150 will-change-transform ${
         item.isImportant 
           ? `important bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.2)] ${item.completed ? 'opacity-80' : ''}`
           : item.completed 
@@ -45,7 +45,7 @@ export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, in
     >
       <button
         onClick={() => onToggleImportant(item.id, !item.isImportant)}
-        className={`relative flex items-center justify-center shrink-0 p-1.5 rounded-full transition-all duration-300 ${
+        className={`relative flex items-center justify-center shrink-0 p-1.5 rounded-full transition-all duration-150 ${
           item.isImportant 
             ? "text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.9)] hover:scale-110" 
             : "text-foreground/30 hover:text-yellow-400/70 hover:scale-110 hover:bg-yellow-400/10"

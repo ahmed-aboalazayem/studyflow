@@ -52,10 +52,12 @@ export async function updateProfileAction(formData: FormData) {
   }
 
   try {
+    console.log(`Updating profile for user ${session.id}. Image size: ${imageUrl?.length || 0} chars.`);
     await prisma.user.update({
       where: { id: session.id },
       data
     })
+    console.log(`Profile updated successfully for user ${session.id}`);
     return { success: true }
   } catch (error) {
     console.error('Update profile error:', error)
@@ -489,13 +491,23 @@ export async function getLeaderboard(courseId: string) {
   const users = [course.user, ...course.shares.map(s => s.user)]
   
   const leaderboardData = await Promise.all(users.map(async (u) => {
+    // Single robust query for all completed items, ordered by latest updated AND course structure
     const progress = await prisma.itemProgress.findMany({
       where: { 
         userId: u.id,
         item: { dayBlock: { courseId } },
         completed: true 
       },
-      include: { item: true }
+      include: { 
+        item: {
+          include: { dayBlock: { select: { title: true, sortOrder: true } } }
+        }
+      },
+      orderBy: [
+        { updatedAt: 'desc' },
+        { item: { dayBlock: { sortOrder: 'desc' } } },
+        { item: { sortOrder: 'desc' } }
+      ]
     })
 
     let totalSeconds = 0
@@ -505,20 +517,8 @@ export async function getLeaderboard(courseId: string) {
       else if (parts.length === 3) totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2]
     })
 
-    const latestProgress = await prisma.itemProgress.findFirst({
-      where: { 
-        userId: u.id,
-        item: { dayBlock: { courseId } },
-        completed: true 
-      },
-      orderBy: { updatedAt: 'desc' },
-      include: { 
-        item: {
-          include: { dayBlock: { select: { title: true } } }
-        }
-      }
-    })
-    
+    // The first item in the sorted progress is the latest one
+    const latestProgress = progress[0]
     const latestVideo = latestProgress?.item.title || null
     const latestSection = latestProgress?.item.dayBlock.title || null
 
