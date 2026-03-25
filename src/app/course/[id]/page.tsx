@@ -54,6 +54,11 @@ export default function CourseDetailPage() {
     return formatSecondsToDuration(totalSecs)
   }, [blocks])
 
+  const studiedTime = React.useMemo(() => {
+    const doneSecs = blocks.flatMap(b => b.items).filter(item => item.completed).reduce((acc, item) => acc + parseDurationToSeconds(item.duration), 0)
+    return formatSecondsToDuration(doneSecs)
+  }, [blocks])
+
   const remainingDays = React.useMemo(() => {
     return blocks.filter(b => b.items.length > 0 && !b.items.every(i => i.completed)).length
   }, [blocks])
@@ -236,43 +241,39 @@ export default function CourseDetailPage() {
                 {course?.title}
               </h1>
               
-              <div className="flex flex-wrap gap-3 items-center">
-                <span className="text-foreground/40 text-base sm:text-lg font-medium">{course?.totalVideos} lessons total</span>
-                <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-white/20"></span>
-                <div className="flex items-center gap-3 text-sm font-medium text-foreground/60 w-full sm:w-auto">
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 sm:flex-none justify-center">
-                    <Clock className="w-4 h-4" />
-                    {course.totalVideos} Videos
-                  </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 sm:flex-none justify-center">
+              <div className="flex flex-wrap gap-2 items-center text-sm font-medium text-foreground/60">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
+                  <Clock className="w-4 h-4" />
+                  {course.totalVideos} Videos
+                </span>
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
+                  <Calendar className="w-4 h-4" />
+                  {blocks.length} Days Planned
+                </span>
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
+                  <Clock className="w-4 h-4 text-primary" />
+                  {totalCourseTime} Total
+                </span>
+                {remainingDays > 0 && (
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
                     <Calendar className="w-4 h-4" />
-                    {blocks.length} Days Planned
+                    {remainingDays} Days Left
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 sm:flex-none justify-center">
-                    <Clock className="w-4 h-4 text-primary" />
-                    {totalCourseTime} Total
+                )}
+                {remainingDays === 0 && blocks.length > 0 && (
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                    All Done!
                   </span>
-                  {remainingDays > 0 && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex-1 sm:flex-none justify-center">
-                      <Calendar className="w-4 h-4" />
-                      {remainingDays} Days Left
-                    </span>
-                  )}
-                  {remainingDays === 0 && blocks.length > 0 && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex-1 sm:flex-none justify-center">
-                      <CheckCircle2 className="w-4 h-4" />
-                      All Done!
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
             </div>
             
             <div className="flex items-center justify-between lg:justify-end gap-6 bg-white/5 p-5 rounded-3xl border border-white/10 lg:bg-transparent lg:p-0 lg:border-0 lg:rounded-none mt-4 lg:mt-0 shadow-lg lg:shadow-none">
               <div className="flex flex-col items-start lg:items-end w-full">
-                <span className="text-[10px] sm:text-[11px] text-foreground/40 uppercase tracking-[0.2em] font-black mb-1">Course Progress</span>
-                <span className={`text-4xl sm:text-5xl font-black tracking-tighter ${overallProgress >= 100 ? "text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "text-white"}`}>
-                  {overallProgress}%
+                <span className="text-[10px] sm:text-[11px] text-foreground/40 uppercase tracking-[0.2em] font-black mb-1">Time Studied</span>
+                <span className="text-2xl sm:text-3xl font-black tracking-tighter text-white">
+                  {studiedTime}
                 </span>
               </div>
               <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 flex items-center justify-center">
@@ -328,6 +329,10 @@ export default function CourseDetailPage() {
                       transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
                     />
                   </svg>
+                  {/* Progress % centered inside the circle */}
+                  <span className={`absolute inset-0 flex items-center justify-center text-2xl font-black tracking-tight ${overallProgress >= 100 ? "text-emerald-400" : "text-white"}`}>
+                    {overallProgress}%
+                  </span>
                   {overallProgress >= 100 && (
                     <motion.div
                       initial={{ scale: 0, rotate: -45 }}
