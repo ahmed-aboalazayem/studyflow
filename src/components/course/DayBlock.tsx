@@ -152,6 +152,7 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentSt
   }, [progress, block.items.length])
 
   const blockFormattedTime = formatSecondsToDuration(blockDurationSeconds)
+  const completedFormattedTime = formatSecondsToDuration(completedDurationSeconds)
 
   const importantCount = React.useMemo(() => block.items.filter(i => i.isImportant).length, [block.items])
   const isKingMood = importantCount > 0
@@ -166,12 +167,16 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentSt
   }
 
   return (
-    <Card className={`mb-8 overflow-hidden group/card transition-all will-change-[border-color] ${
+    <Card className={`mb-8 overflow-hidden group/card transition-all will-change-[border-color,background-color] ${
       isCelebrating
         ? 'border-amber-400/80 bg-amber-500/5 shadow-[0_0_60px_rgba(251,191,36,0.4)]'
-        : isKingMood 
-          ? 'border-amber-500/40 bg-amber-500/5 shadow-[0_0_40px_rgba(245,158,11,0.15)] hover:border-amber-500/60' 
-          : 'border-white/5 bg-black/20 hover:border-white/10'
+        : progress === 100
+          ? 'border-emerald-500/40 bg-emerald-500/5 shadow-[0_0_40px_rgba(16,185,129,0.15)] hover:border-emerald-500/60'
+          : isKingMood 
+            ? 'border-amber-500/40 bg-amber-500/5 shadow-[0_0_40px_rgba(245,158,11,0.15)] hover:border-amber-500/60' 
+            : progress > 0
+              ? 'border-primary/40 bg-primary/5 shadow-[0_0_40px_rgba(255,31,31,0.08)] hover:border-primary/60'
+              : 'border-white/5 bg-black/20 hover:border-white/10'
     }`}>
       {/* Accordion Header */}
       <div 
@@ -226,7 +231,10 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentSt
               </span>
               <span className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md font-bold">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                {progress}% Complete
+                {completedFormattedTime} Studied
+              </span>
+              <span className="flex items-center gap-1.5 bg-primary/10 text-white/60 px-2 py-1 rounded-md font-bold">
+                {progress}%
               </span>
               
               {block.items.length > 0 && (
