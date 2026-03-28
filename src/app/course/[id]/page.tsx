@@ -17,6 +17,10 @@ import { FocusMode } from "@/components/course/FocusMode"
 import { Modal } from "@/components/ui/Modal"
 import { LoadingState } from "@/components/ui/LoadingState"
 import { formatSecondsToDuration, parseDurationToSeconds } from "@/lib/utils"
+import { useGamification } from "@/hooks/useGamification"
+import { useStreaks } from "@/hooks/useStreaks"
+import { useActivityLog } from "@/hooks/useActivityLog"
+import { useXPToastQueue } from "@/components/ui/XPToast"
 
 export default function CourseDetailPage() {
   const params = useParams()
@@ -33,6 +37,18 @@ export default function CourseDetailPage() {
     addRecentlyShared
   } = useStore()
   const { user, isLoading } = useAuth()
+
+  const { addXP, levelInfo, XP_PER_VIDEO } = useGamification()
+  const { recordStudy } = useStreaks()
+  const { logActivity } = useActivityLog()
+  const { enqueue, ToastContainer } = useXPToastQueue()
+
+  const handleItemComplete = React.useCallback(() => {
+    const result = addXP(XP_PER_VIDEO)
+    enqueue({ xpGain: XP_PER_VIDEO, leveledUp: result.leveledUp, newLevelName: result.newLevelName, color: levelInfo.current.color })
+    recordStudy()
+    logActivity()
+  }, [addXP, XP_PER_VIDEO, enqueue, levelInfo, recordStudy, logActivity])
 
   const courseId = params.id as string
   const course = courses.find((c: any) => c.id === courseId)
@@ -211,6 +227,7 @@ export default function CourseDetailPage() {
   return (
     <main className="relative min-h-screen">
       <BackgroundEffect />
+      {ToastContainer}
       
       <div className="container mx-auto px-4 py-8 max-w-7xl relative z-10">
         <div className="flex items-center justify-between mb-8">
@@ -350,7 +367,7 @@ export default function CourseDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {blocks.map((block, index) => (
               <div key={block.id} ref={index === currentStudyIndex ? currentStudyRef : undefined}>
-                <DayBlock block={block} isCurrentStudy={index === currentStudyIndex} onChange={handleBlockChange} />
+                <DayBlock block={block} isCurrentStudy={index === currentStudyIndex} onChange={handleBlockChange} onItemComplete={handleItemComplete} />
               </div>
             ))}
             
@@ -439,7 +456,7 @@ export default function CourseDetailPage() {
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
             onClick={scrollToCurrentStudy}
-            className="fixed bottom-12 right-25 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-primary text-white font-bold text-sm shadow-[0_0_30px_rgba(255,31,31,0.4)] hover:bg-primary/90 hover:shadow-[0_0_40px_rgba(255,31,31,0.6)] active:scale-95 transition-all border border-primary/60 backdrop-blur-sm"
+            className="fixed bottom-12 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-36 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-primary text-white font-bold text-sm shadow-[0_0_30px_rgba(255,31,31,0.4)] hover:bg-primary/90 hover:shadow-[0_0_40px_rgba(255,31,31,0.6)] active:scale-95 transition-all border border-primary/60 backdrop-blur-sm"
           >
             <Target className="w-4 h-4" />
             Current Day

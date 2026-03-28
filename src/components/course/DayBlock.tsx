@@ -10,6 +10,7 @@ import { ChecklistItem, type ChecklistItemData } from "./ChecklistItem"
 import { formatSecondsToDuration, parseDurationToSeconds } from "@/lib/utils"
 import { useStore } from "@/lib/store"
 import { Modal } from "@/components/ui/Modal"
+import { playSound } from "@/lib/sounds"
 
 export interface DayBlockData {
   id: string
@@ -21,10 +22,13 @@ interface DayBlockProps {
   block: DayBlockData
   isCurrentStudy?: boolean
   onChange?: (block: DayBlockData) => void
+  onItemComplete?: () => void
 }
 
-export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentStudy = false }: DayBlockProps) => {
+export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentStudy = false, onItemComplete }: DayBlockProps) => {
   const [block, setBlockState] = React.useState(initialBlock)
+  const [isCelebrating, setIsCelebrating] = React.useState(false)
+  const prevProgressRef = React.useRef(0)
 
   // Sync when parent updates the block (e.g., after API fetch)
   React.useEffect(() => {
@@ -137,6 +141,16 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentSt
     ? 0 
     : Math.round((completedDurationSeconds / blockDurationSeconds) * 100)
 
+  // Detect 100% completion → celebration
+  React.useEffect(() => {
+    if (progress === 100 && prevProgressRef.current < 100 && block.items.length > 0) {
+      setIsCelebrating(true)
+      playSound('blockComplete')
+      setTimeout(() => setIsCelebrating(false), 2500)
+    }
+    prevProgressRef.current = progress
+  }, [progress, block.items.length])
+
   const blockFormattedTime = formatSecondsToDuration(blockDurationSeconds)
 
   const importantCount = React.useMemo(() => block.items.filter(i => i.isImportant).length, [block.items])
@@ -152,7 +166,13 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentSt
   }
 
   return (
-    <Card className={`mb-8 overflow-hidden group/card transition-all will-change-[border-color] ${isKingMood ? 'border-amber-500/40 bg-amber-500/5 shadow-[0_0_40px_rgba(245,158,11,0.15)] hover:border-amber-500/60' : 'border-white/5 bg-black/20 hover:border-white/10'}`}>
+    <Card className={`mb-8 overflow-hidden group/card transition-all will-change-[border-color] ${
+      isCelebrating
+        ? 'border-amber-400/80 bg-amber-500/5 shadow-[0_0_60px_rgba(251,191,36,0.4)]'
+        : isKingMood 
+          ? 'border-amber-500/40 bg-amber-500/5 shadow-[0_0_40px_rgba(245,158,11,0.15)] hover:border-amber-500/60' 
+          : 'border-white/5 bg-black/20 hover:border-white/10'
+    }`}>
       {/* Accordion Header */}
       <div 
         className="p-6 cursor-pointer select-none"
@@ -265,7 +285,8 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentSt
                       item={item} 
                       index={index}
                       onToggle={toggleItem}
-                      onToggleImportant={doToggleImportant} 
+                      onToggleImportant={doToggleImportant}
+                      onComplete={onItemComplete}
                     />
                   ))}
                 </AnimatePresence>

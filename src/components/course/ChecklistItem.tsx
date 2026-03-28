@@ -20,22 +20,27 @@ interface ChecklistItemProps {
   onToggle: (id: string, completed: boolean) => void
   onToggleImportant: (id: string, isImportant: boolean) => void
   index: number
+  onComplete?: () => void
 }
 
-export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, index }: ChecklistItemProps) => {
+export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, index, onComplete }: ChecklistItemProps) => {
   const handleCheckToggle = React.useCallback(() => {
-    if (!item.completed) playSound('taskComplete')
-    else playSound('taskUndo')
+    if (!item.completed) {
+      playSound('taskComplete')
+      onComplete?.()
+    } else {
+      playSound('taskUndo')
+    }
     onToggle(item.id, !item.completed)
-  }, [item.id, item.completed, onToggle])
+  }, [item.id, item.completed, onToggle, onComplete])
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      whileHover={{ scale: 1.01 }}
-      className={`group relative flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all duration-150 will-change-transform ${
+      transition={{ type: "spring", stiffness: 100, damping: 15, delay: index * 0.05 }}
+      whileHover={{ x: 8 }}
+      className={`group relative flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-colors duration-300 will-change-transform ${
         item.isImportant 
           ? `important bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.2)] ${item.completed ? 'opacity-80' : ''}`
           : item.completed 

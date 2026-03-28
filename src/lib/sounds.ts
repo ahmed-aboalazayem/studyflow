@@ -7,6 +7,16 @@ export const SOUNDS = {
   taskComplete: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3",
   // Low pop / cancel format
   taskUndo: "https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3",
+  // Motivated start (Focus)
+  focusStart: "https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3",
+  // More motivated finish (Focus)
+  focusSuccess: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3",
+  // Relaxing break start
+  breakStart: "https://assets.mixkit.co/active_storage/sfx/241/241-preview.mp3",
+  // Alert break end
+  breakEnd: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
+  // Triumphant chime for completing a full day block
+  blockComplete: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3",
 }
 
 export const playSound = (type: keyof typeof SOUNDS) => {

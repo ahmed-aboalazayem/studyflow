@@ -9,6 +9,9 @@ import { CourseCard, CourseCardSkeleton } from "@/components/course/CourseCard"
 import { useStore } from "@/lib/store"
 import { useAuth } from "@/lib/auth-context"
 import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
+import { LevelBadge } from "@/components/ui/LevelBadge"
+import { StreakWidget } from "@/components/ui/StreakWidget"
+import { ActivityHeatmap } from "@/components/ui/ActivityHeatmap"
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -61,6 +64,11 @@ export default function Dashboard() {
             <p className="text-foreground/40 text-lg font-medium">
               Elevate your knowledge, one lesson at a time.
             </p>
+            {/* Streak & Level widgets */}
+            <div className="flex flex-wrap items-center gap-3 mt-3">
+              <LevelBadge />
+              <StreakWidget />
+            </div>
           </div>
           
           <div className="relative w-full md:w-80 group">
@@ -116,6 +124,10 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+        {/* Activity Heatmap */}
+        <div className="mt-16">
+          <ActivityHeatmap />
+        </div>
       </div>
     </main>
   )
