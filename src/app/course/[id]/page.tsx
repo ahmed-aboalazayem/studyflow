@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Clock, Calendar, Plus, Share2, X, UserPlus, CheckCircle2, Youtube, ExternalLink, ArrowRight, Trash2, Target } from "lucide-react"
+import { ArrowLeft, Clock, Calendar, Plus, Share2, X, UserPlus, CheckCircle2, Youtube, ExternalLink, ArrowRight, Trash2, Target, Copy, Check } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -88,6 +88,30 @@ export default function CourseDetailPage() {
     type: "success"
   })
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
+  const [copied, setCopied] = React.useState(false)
+
+  const handleCopyDetails = React.useCallback(async () => {
+    if (!course) return
+
+    const sectionsText = blocks
+      .map(block => {
+        const itemsText = block.items
+          .map(item => `${item.title} - ${item.duration}`)
+          .join('\n')
+        return `${block.title} :\n${itemsText}`
+      })
+      .join('\n\n')
+
+    const fullText = `Total Time: ${totalCourseTime}\n\n${sectionsText}`
+
+    try {
+      await navigator.clipboard.writeText(fullText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy course details:', err)
+    }
+  }, [course, blocks, totalCourseTime])
 
   React.useEffect(() => {
     fetchCourseDetail(courseId)
@@ -236,17 +260,37 @@ export default function CourseDetailPage() {
             Back to Dashboard
           </Link>
 
-          {course.ownership !== 'shared' && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setShowDeleteModal(true)}
-              className="text-foreground/40 hover:text-red-500 hover:border-red-500/50 transition-all border-white/5 bg-white/5"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Course
-            </Button>
-          )}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleCopyDetails}
+                className="text-foreground/40 hover:text-primary hover:border-primary/50 transition-all border-white/5 bg-white/5"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2 text-emerald-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Details
+                  </>
+                )}
+              </Button>
+              {course.ownership !== 'shared' && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="text-foreground/40 hover:text-red-500 hover:border-red-500/50 transition-all border-white/5 bg-white/5"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Course
+                </Button>
+              )}
+            </div>
         </div>
 
         {/* Header Section */}
