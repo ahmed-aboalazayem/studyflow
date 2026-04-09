@@ -9,7 +9,7 @@ import { getCourseCompetitorProgress } from "@/app/actions"
 import {
   TreePine, MountainSnow, Tent, User, Map as MapIcon,
   Crown, CheckCircle2, ChevronDown, Trophy, Lock,
-  Flame
+  Flame, Monitor
 } from "lucide-react"
 import Link from "next/link"
 
@@ -379,7 +379,43 @@ export default function MapPage() {
 
           {/* ── MAP ──────────────────────────────────────────────── */}
           <div className="flex-1 relative min-w-0">
-            {mapNodes.length <= 1 ? (
+            {isMobile ? (
+              <div className="flex flex-col items-center justify-center py-20 px-6 glass rounded-3xl border border-white/10 text-center relative overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+                
+                <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-8 border border-emerald-500/20">
+                  <Monitor className="w-10 h-10 text-emerald-400 animate-pulse" />
+                </div>
+
+                <h2 className="text-2xl font-black text-white mb-4 tracking-tight">
+                  Desktop Experience Required
+                </h2>
+                
+                <p className="text-emerald-100/60 font-medium mb-12 text-sm max-w-xs mx-auto leading-relaxed">
+                  Open StudyFlow on your laptop to explore the full interactive Adventure Map and track your competition journey.
+                </p>
+
+                <div className="w-full space-y-4 relative">
+                  <div className="absolute left-1/2 -top-6 -translate-x-1/2 w-px h-6 bg-gradient-to-b from-transparent to-emerald-500/30" />
+                  
+                  {[
+                    "The best view comes after the hardest climb.",
+                    "Focus today, lead tomorrow.",
+                    "Consistency is the key to mastery."
+                  ].map((quote, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + i * 0.1 }}
+                      className="px-6 py-4 rounded-2xl bg-white/5 border border-white/5 italic text-emerald-400/80 text-sm font-medium"
+                    >
+                      "{quote}"
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ) : mapNodes.length <= 1 ? (
               <div className="text-center py-32 glass border-dashed border-emerald-500/20 rounded-3xl">
                 <TreePine className="w-16 h-16 text-emerald-500/30 mx-auto mb-6" />
                 <p className="text-2xl font-bold text-white mb-2">Uncharted Territory</p>
@@ -629,26 +665,28 @@ export default function MapPage() {
         </div>
       </div>
       
-      {/* ── Floating Locate Me Button ── */}
-      <div className="fixed bottom-8 right-8 z-[60] group">
-        <div className="absolute -inset-2 bg-emerald-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <button
-          onClick={scrollToMe}
-          className="relative w-14 h-14 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-emerald-400 hover:border-emerald-500/40 shadow-2xl transition-all active:scale-90"
-        >
-          <User className="w-6 h-6" />
-          <motion.div 
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-black flex items-center justify-center"
+      {/* ── Floating Locate Me Button (Desktop Only) ── */}
+      {!isMobile && (
+        <div className="fixed bottom-8 right-8 z-[60] group">
+          <div className="absolute -inset-2 bg-emerald-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <button
+            onClick={scrollToMe}
+            className="relative w-14 h-14 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-emerald-400 hover:border-emerald-500/40 shadow-2xl transition-all active:scale-90"
           >
-            <div className="w-1.5 h-1.5 bg-white rounded-full" />
-          </motion.div>
-        </button>
-        <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap">
-          Locate Me
+            <User className="w-6 h-6" />
+            <motion.div 
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-black flex items-center justify-center"
+            >
+              <div className="w-1.5 h-1.5 bg-white rounded-full" />
+            </motion.div>
+          </button>
+          <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap">
+            Locate Me
+          </div>
         </div>
-      </div>
+      )}
     </main>
   )
 }
