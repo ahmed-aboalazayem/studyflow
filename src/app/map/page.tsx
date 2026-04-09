@@ -37,7 +37,10 @@ function nodeSpacing(totalVideos: number): number {
 }
 
 // xPercent based on whether the node index is even or odd (zigzag)
-function xPct(index: number): number {
+function xPct(index: number, isMobile: boolean): number {
+  if (isMobile) {
+    return index % 2 === 0 ? 38 : 62 
+  }
   return index % 2 === 0 ? 28 : 72
 }
 
@@ -64,7 +67,8 @@ function rankColors(rank: number) {
 // ─── Avatar Dot ────────────────────────────────────────────────────────────
 function AvatarDot({
   competitor, rank, yPositions, nodeCount,
-  onHover, hoveredId
+  onHover, hoveredId, isMobile,
+  spotIndex, totalInSpot
 }: {
   competitor: Competitor
   rank: number
@@ -72,6 +76,9 @@ function AvatarDot({
   nodeCount: number
   onHover: (id: number | null) => void
   hoveredId: number | null
+  isMobile: boolean
+  spotIndex: number
+  totalInSpot: number
 }) {
   const isMe = competitor.isCurrentUser
   const isLeader = rank === 0
@@ -79,16 +86,26 @@ function AvatarDot({
   const dayIdx   = Math.min(competitor.currentDayIndex, nodeCount - 1)
   const nextIdx  = Math.min(dayIdx + 1, yPositions.length - 1)
 
-  const curX  = xPct(dayIdx)
+  const curX  = xPct(dayIdx, isMobile)
   const curY  = yPositions[dayIdx]  ?? 0
-  const nxtX  = xPct(nextIdx)
+  const nxtX  = xPct(nextIdx, isMobile)
   const nxtY  = yPositions[nextIdx] ?? curY
 
   const p = competitor.progressWithinDay
-  const finalX = curX + (nxtX - curX) * p
+  let finalX = curX + (nxtX - curX) * p
   const finalY = curY + (nxtY - curY) * p
 
-  const size   = isMe ? 56 : 42
+  // Collision offset: side-by-side if multiple people in same p
+  if (totalInSpot > 1) {
+    const spread = isMobile ? 32 : 44 // px
+    const totalWidth = (totalInSpot - 1) * spread
+    const startOffset = -totalWidth / 2
+    const pixelOffset = startOffset + (spotIndex * spread)
+    // Convert px offset back to rough % for absolute positioning (approximate based on typical 6xl container)
+    // Actually better to just use transform: translateX
+  }
+
+  const size   = isMe ? (isMobile ? 48 : 56) : (isMobile ? 36 : 42)
   const zIndex = isMe ? 40 : 30
 
   return (
@@ -97,7 +114,11 @@ function AvatarDot({
       animate={{ left: `${finalX}%`, top: finalY }}
       transition={{ type: "spring", stiffness: 60, damping: 18 }}
       className="absolute pointer-events-auto"
-      style={{ x: "-50%", y: "-50%", zIndex }}
+      style={{ 
+        x: totalInSpot > 1 ? `calc(-50% + ${(spotIndex - (totalInSpot - 1) / 2) * (isMobile ? 32 : 44)}px)` : "-50%", 
+        y: "-50%", 
+        zIndex 
+      }}
       onMouseEnter={() => onHover(competitor.userId)}
       onMouseLeave={() => onHover(null)}
     >
@@ -163,6 +184,15 @@ export default function MapPage() {
   const [competitors, setCompetitors] = React.useState<Competitor[]>([])
   const [loadingCompetitors, setLoadingCompetitors] = React.useState(false)
   const [hoveredUserId, setHoveredUserId] = React.useState<number | null>(null)
+  const [isMobile, setIsMobile] = React.useState(false)
+
+  // ── responsive check
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   // ── fetch courses on mount
   React.useEffect(() => { fetchCourses() }, [fetchCourses])
@@ -244,15 +274,44 @@ export default function MapPage() {
 
   // SVG path string for all nodes
   const pathPoints = React.useMemo(() =>
-    mapNodes.map((_, i) => `${xPct(i)}%,${yPositions[i] ?? 0}`).join(" ")
-  , [mapNodes, yPositions])
+    mapNodes.map((_, i) => `${xPct(i, isMobile)}%,${yPositions[i] ?? 0}`).join(" ")
+  , [mapNodes, yPositions, isMobile])
+
+  // Group competitors by position key to handle offsets
+  const groupedCompetitors = React.useMemo(() => {
+    const groups: Record<string, Competitor[]> = {}
+    competitors.forEach(c => {
+      const key = `${c.currentDayIndex}-${c.progressWithinDay.toFixed(3)}` // fix minor float diffs
+      if (!groups[key]) groups[key] = []
+      groups[key].push(c)
+    })
+    return groups
+  }, [competitors])
 
   // Active path (up to current position)
   const { currentDayIndex, progressWithinDay } = myProgress
   const activeNodeCount = Math.min(currentDayIndex + 2, mapNodes.length)
   const activePathPoints = React.useMemo(() =>
-    mapNodes.slice(0, activeNodeCount).map((_, i) => `${xPct(i)}%,${yPositions[i] ?? 0}`).join(" ")
-  , [mapNodes, yPositions, activeNodeCount])
+    mapNodes.slice(0, activeNodeCount).map((_, i) => `${xPct(i, isMobile)}%,${yPositions[i] ?? 0}`).join(" ")
+  , [mapNodes, yPositions, activeNodeCount, isMobile])
+
+  // Scrolling function
+  const scrollToMe = React.useCallback(() => {
+    const me = competitors.find(c => c.isCurrentUser) || myProgress
+    // Calculate estimated Y
+    const dayIdx = Math.min(me.currentDayIndex, mapNodes.length - 1)
+    const nextIdx = Math.min(dayIdx + 1, yPositions.length - 1)
+    const curY = yPositions[dayIdx] ?? 0
+    const nxtY = yPositions[nextIdx] ?? curY
+    const p = (me as any).progressWithinDay ?? 0
+    const finalY = curY + (nxtY - curY) * p
+    
+    // Add header offset
+    window.scrollTo({
+      top: finalY + 200, // Roughly maps to the 24px + 12px padding top
+      behavior: 'smooth'
+    })
+  }, [competitors, myProgress, mapNodes, yPositions])
 
   if (!isLoaded || isLoading) {
     return (
@@ -279,28 +338,28 @@ export default function MapPage() {
 
         {/* ── Header ─────────────────────────────────────────── */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-3 flex items-center justify-center gap-4">
-            <MapIcon className="w-10 h-10 text-emerald-400" />
+          <h1 className="text-3xl md:text-6xl font-black text-white tracking-tighter mb-3 flex items-center justify-center gap-3">
+            <MapIcon className="w-8 h-8 md:w-10 md:h-10 text-emerald-400" />
             Adventure Map
           </h1>
-          <p className="text-emerald-100/40 text-lg font-medium">
+          <p className="text-emerald-100/40 text-sm md:text-lg font-medium">
             Compete on the same trail — see who reaches <span className="text-yellow-400">The Zenith</span> first.
           </p>
         </div>
 
         {/* ── Course Selector ─────────────────────────────────── */}
-        <div className="max-w-lg mx-auto relative mb-12 z-50">
-          <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+        <div className="max-w-lg mx-auto relative mb-12 z-50 px-2">
+          <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none">
             <ChevronDown className="w-5 h-5 text-emerald-400" />
           </div>
           <select
             value={selectedCourseId}
             onChange={e => setSelectedCourseId(e.target.value)}
-            className="w-full appearance-none bg-black/70 border border-emerald-500/30 text-white rounded-2xl px-6 py-4 text-lg font-bold shadow-[0_0_30px_rgba(16,185,129,0.1)] focus:outline-none focus:border-emerald-400 focus:shadow-[0_0_40px_rgba(16,185,129,0.3)] transition-all backdrop-blur-sm cursor-pointer"
+            className="w-full appearance-none bg-black/70 border border-emerald-500/30 text-white rounded-2xl px-6 py-3 md:py-4 text-base md:text-lg font-bold shadow-[0_0_30px_rgba(16,185,129,0.1)] focus:outline-none focus:border-emerald-400 focus:shadow-[0_0_40px_rgba(16,185,129,0.3)] transition-all backdrop-blur-sm cursor-pointer"
           >
-            <option value="" disabled className="bg-black">Select a Course…</option>
+            <option value="" disabled className="bg-black text-sm">Select Course…</option>
             {courses.map(course => (
-              <option key={course.id} value={course.id} className="bg-black text-white">
+              <option key={course.id} value={course.id} className="bg-black text-white text-sm">
                 {course.title}  ({course.progress}%)
               </option>
             ))}
@@ -353,14 +412,14 @@ export default function MapPage() {
                   )}
                   {/* Milestone dots on inactive trail */}
                   {mapNodes.slice(0, -1).map((_, i) => {
-                    const ax = xPct(i), ay = yPositions[i] ?? 0
-                    const bx = xPct(i + 1), by = yPositions[i + 1] ?? ay
+                    const ax = xPct(i, isMobile), ay = yPositions[i] ?? 0
+                    const bx = xPct(i + 1, isMobile), by = yPositions[i + 1] ?? ay
                     return [0.33, 0.66].map((t, j) => (
                       <circle
                         key={`dot-${i}-${j}`}
                         cx={`${ax + (bx - ax) * t}%`}
                         cy={ay + (by - ay) * t}
-                        r={4}
+                        r={isMobile ? 3 : 4}
                         fill={i < currentDayIndex ? "#34d399" : "rgba(255,255,255,0.15)"}
                       />
                     ))
@@ -380,7 +439,7 @@ export default function MapPage() {
                   const isCurrent  = i === currentDayIndex && !myProgress.isFinished
                   const isLocked   = i > currentDayIndex && !isFinal && !isCompleted
 
-                  const cx = xPct(i)
+                  const cx = xPct(i, isMobile)
                   const cy = yPositions[i] ?? 0
 
                   const diffLevel = node.totalItems > 8 ? "hard" : node.totalItems > 4 ? "medium" : "easy"
@@ -392,7 +451,7 @@ export default function MapPage() {
                       whileInView={{ opacity: isLocked ? 0.3 : 1, scale: 1 }}
                       viewport={{ once: true, margin: "-80px" }}
                       transition={{ type: "spring", stiffness: 180, damping: 22, delay: i * 0.06 }}
-                      className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 z-10 w-44"
+                      className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 z-10 w-32 md:w-44"
                       style={{ left: `${cx}%`, top: cy, filter: isLocked ? "blur(2px) grayscale(1)" : "none" }}
                     >
                       {/* ── Node circle ── */}
@@ -406,13 +465,13 @@ export default function MapPage() {
                         style={{ width: isFinal ? 96 : 80, height: isFinal ? 96 : 80 }}
                       >
                         {isFinal ? (
-                          <Crown className={`w-10 h-10 ${myProgress.isFinished ? "text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,1)]" : "text-white/20"}`} />
+                          <Crown className={`w-8 h-8 md:w-10 md:h-10 ${myProgress.isFinished ? "text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,1)]" : "text-white/20"}`} />
                         ) : diffLevel === "hard" ? (
-                          <MountainSnow className={`w-9 h-9 ${isCompleted ? "text-emerald-400" : isCurrent ? "text-white" : "text-white/20"}`} />
+                          <MountainSnow className={`w-7 h-7 md:w-9 md:h-9 ${isCompleted ? "text-emerald-400" : isCurrent ? "text-white" : "text-white/20"}`} />
                         ) : diffLevel === "medium" ? (
-                          <TreePine className={`w-9 h-9 ${isCompleted ? "text-emerald-400" : isCurrent ? "text-white" : "text-white/20"}`} />
+                          <TreePine className={`w-7 h-7 md:w-9 md:h-9 ${isCompleted ? "text-emerald-400" : isCurrent ? "text-white" : "text-white/20"}`} />
                         ) : (
-                          <Tent className={`w-9 h-9 ${isCompleted ? "text-emerald-400" : isCurrent ? "text-white" : "text-white/20"}`} />
+                          <Tent className={`w-7 h-7 md:w-9 md:h-9 ${isCompleted ? "text-emerald-400" : isCurrent ? "text-white" : "text-white/20"}`} />
                         )}
 
                         {/* Locked layer */}
@@ -449,18 +508,27 @@ export default function MapPage() {
                   )
                 })}
 
-                {/* ── All competitor avatars (including me) ── */}
-                {competitors.map((comp, rank) => (
-                  <AvatarDot
-                    key={comp.userId}
-                    competitor={comp}
-                    rank={rank}
-                    yPositions={yPositions}
-                    nodeCount={mapNodes.length - 1}
-                    onHover={setHoveredUserId}
-                    hoveredId={hoveredUserId}
-                  />
-                ))}
+                 {/* ── All competitor avatars (including me) ── */}
+                {Object.values(groupedCompetitors).map((group) => 
+                  group.map((comp, idx) => {
+                    // Rank is determined by the index in the original sorted competitors array
+                    const originalRank = competitors.findIndex(c => c.userId === comp.userId)
+                    return (
+                      <AvatarDot
+                        key={comp.userId}
+                        competitor={comp}
+                        rank={originalRank}
+                        yPositions={yPositions}
+                        nodeCount={mapNodes.length - 1}
+                        onHover={setHoveredUserId}
+                        hoveredId={hoveredUserId}
+                        isMobile={isMobile}
+                        spotIndex={idx}
+                        totalInSpot={group.length}
+                      />
+                    )
+                  })
+                )}
 
               </div>
             )}
@@ -550,6 +618,27 @@ export default function MapPage() {
             </div>
           </div>
 
+        </div>
+      </div>
+      
+      {/* ── Floating Locate Me Button ── */}
+      <div className="fixed bottom-8 right-8 z-[60] group">
+        <div className="absolute -inset-2 bg-emerald-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <button
+          onClick={scrollToMe}
+          className="relative w-14 h-14 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-emerald-400 hover:border-emerald-500/40 shadow-2xl transition-all active:scale-90"
+        >
+          <User className="w-6 h-6" />
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-black flex items-center justify-center"
+          >
+            <div className="w-1.5 h-1.5 bg-white rounded-full" />
+          </motion.div>
+        </button>
+        <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap">
+          Locate Me
         </div>
       </div>
     </main>

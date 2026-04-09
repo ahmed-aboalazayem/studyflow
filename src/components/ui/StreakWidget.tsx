@@ -55,7 +55,7 @@ export function StreakWidget({ onClick }: StreakWidgetProps = {}) {
       )}
       
       {onClick && (
-        <div className="hidden md:flex ml-1 w-0 overflow-hidden group-hover:w-20 transition-all duration-300 opacity-0 group-hover:opacity-100 items-center justify-end">
+        <div className="hidden md:flex ml-1 w-0 overflow-hidden group-hover:w-25 transition-all duration-300 opacity-0 group-hover:opacity-100 items-center justify-end">
           <span className="text-[9px] font-black uppercase tracking-widest text-white/50 whitespace-nowrap">View Journey</span>
         </div>
       )}
