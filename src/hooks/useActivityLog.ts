@@ -1,37 +1,34 @@
 "use client"
 
 import * as React from "react"
-
-const STORAGE_KEY = "studyflow_activity"
+import { useAuth } from "@/lib/auth-context"
+import { updateUserStatsAction } from "@/app/actions"
 
 function todayISO() {
   return new Date().toISOString().split("T")[0]
 }
 
 export function useActivityLog() {
-  const [activityMap, setActivityMap] = React.useState<Record<string, number>>({})
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      try {
-        setActivityMap(JSON.parse(raw))
-      } catch {
-        setActivityMap({})
-      }
+  const { user, updateUser } = useAuth()
+  
+  // Parse activityData if it's a JSON string or already an object
+  const activityMap = React.useMemo(() => {
+    if (!user?.activityData) return {}
+    if (typeof user.activityData === 'string') {
+      try { return JSON.parse(user.activityData) } catch { return {} }
     }
-  }, [])
+    return user.activityData as Record<string, number>
+  }, [user?.activityData])
 
   const logActivity = React.useCallback(() => {
-    if (typeof window === "undefined") return
+    if (!user) return
     const today = todayISO()
-    setActivityMap(prev => {
-      const next = { ...prev, [today]: (prev[today] || 0) + 1 }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      return next
-    })
-  }, [])
+    
+    const nextMap = { ...activityMap, [today]: (activityMap[today] || 0) + 1 }
+    
+    updateUser({ activityData: nextMap })
+    updateUserStatsAction({ activityData: nextMap })
+  }, [user, activityMap, updateUser])
 
   return { activityMap, logActivity }
 }

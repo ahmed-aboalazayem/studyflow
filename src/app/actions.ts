@@ -21,8 +21,43 @@ export async function getMe() {
   
   return await prisma.user.findUnique({
     where: { id: session.id },
-    select: { id: true, username: true, displayName: true, imageUrl: true }
+    select: { 
+      id: true, 
+      username: true, 
+      displayName: true, 
+      imageUrl: true,
+      xp: true,
+      streak: true,
+      lastStudyDate: true,
+      activityData: true
+    }
   })
+}
+
+export async function updateUserStatsAction(data: { xp?: number, streak?: number, lastStudyDate?: Date, activityData?: any }) {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: session.id },
+      data,
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        imageUrl: true,
+        xp: true,
+        streak: true,
+        lastStudyDate: true,
+        activityData: true
+      }
+    })
+    return { success: true, user: updatedUser }
+  } catch (err) {
+    console.error('Failed to update stats:', err)
+    return { error: 'Failed to update stats' }
+  }
 }
 
 export async function fixDatabaseSchema() {
@@ -534,6 +569,80 @@ export async function getLeaderboard(courseId: string) {
   }))
 
   return leaderboardData.sort((a, b) => b.totalMinutes - a.totalMinutes)
+}
+
+export async function getCourseCompetitorProgress(courseId: string) {
+  const session = await getSession()
+  if (!session) return []
+
+  // Fetch the course with all users who have access (owner + shares)
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      user: { select: { id: true, username: true, displayName: true, imageUrl: true } },
+      shares: { include: { user: { select: { id: true, username: true, displayName: true, imageUrl: true } } } },
+      dayBlocks: {
+        orderBy: { sortOrder: 'asc' },
+        include: {
+          items: {
+            orderBy: { sortOrder: 'asc' },
+            select: { id: true, duration: true }
+          }
+        }
+      }
+    }
+  })
+
+  if (!course) return []
+
+  const allUsers = [course.user, ...course.shares.map(s => s.user)]
+
+  const results = await Promise.all(allUsers.map(async (u) => {
+    // Fetch all item completions for this user on this course
+    const completedItemIds = new Set(
+      (await prisma.itemProgress.findMany({
+        where: {
+          userId: u.id,
+          item: { dayBlock: { courseId } },
+          completed: true,
+        },
+        select: { itemId: true }
+      })).map(p => p.itemId)
+    )
+
+    // Determine currentDayIndex and progressWithinDay
+    let currentDayIndex = course.dayBlocks.length - 1
+    let progressWithinDay = 1
+
+    for (let i = 0; i < course.dayBlocks.length; i++) {
+      const block = course.dayBlocks[i]
+      const total = block.items.length
+      if (total === 0) continue
+      const completed = block.items.filter(item => completedItemIds.has(item.id)).length
+      if (completed < total) {
+        currentDayIndex = i
+        progressWithinDay = completed / total
+        break
+      }
+    }
+
+    // score: higher = further along
+    const score = currentDayIndex + progressWithinDay
+    const isCurrentUser = u.id === session.id
+
+    return {
+      userId: u.id,
+      username: u.username,
+      displayName: u.displayName,
+      imageUrl: u.imageUrl,
+      currentDayIndex,
+      progressWithinDay,
+      score,
+      isCurrentUser,
+    }
+  }))
+
+  return results.sort((a, b) => b.score - a.score)
 }
 
 export async function updateBlockTitle(blockId: string, title: string) {

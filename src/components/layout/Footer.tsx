@@ -45,7 +45,6 @@ export const Footer = React.memo(function Footer() {
         {/* Profile Section */}
         <div className="flex flex-col items-center gap-6">
           <motion.div
-            whileHover={{ scale: 1.05 }}
             className="relative"
           >
             {/* Optimized profile glow */}
@@ -64,11 +63,11 @@ export const Footer = React.memo(function Footer() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 group"
             >
-              <span className="text-primary group-hover:scale-125 transition-transform duration-500 font-mono">&lt;</span>
+              <span className="text-primary transition-transform duration-500 font-mono">&lt;</span>
               <span className="text-gradient drop-shadow-[0_0_25px_rgba(255,31,31,0.5)] transition-all duration-300 group-hover:tracking-widest">
                 Ahmed Aboalazayem
               </span>
-              <span className="text-primary group-hover:scale-125 transition-transform duration-500 font-mono">/&gt;</span>
+              <span className="text-primary transition-transform duration-500 font-mono">/&gt;</span>
             </a>
           </h2>
         </div>
@@ -114,7 +113,6 @@ function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      whileHover={{ y: -8, scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       transition={{ type: "spring", stiffness: 600, damping: 30 }} // سريع وسلس
       className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/60 transition-all duration-150 shadow-xl hover:text-primary hover:border-primary/50 hover:shadow-[0_15px_40px_rgba(255,31,31,0.25)] group relative"

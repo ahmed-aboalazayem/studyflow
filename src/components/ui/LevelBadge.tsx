@@ -5,15 +5,22 @@ import { motion } from "framer-motion"
 import { Zap, ChevronUp } from "lucide-react"
 import { useGamification } from "@/hooks/useGamification"
 
-export function LevelBadge() {
+interface LevelBadgeProps {
+  onClick?: () => void
+}
+
+export function LevelBadge({ onClick }: LevelBadgeProps = {}) {
   const { xp, levelInfo } = useGamification()
   const { current, next, progressPercent } = levelInfo
 
   return (
-    <motion.div
+    <motion.button
+      onClick={onClick}
+      whileHover={onClick ? { scale: 1.05 } : {}}
+      whileTap={onClick ? { scale: 0.95 } : {}}
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border backdrop-blur-sm"
+      className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border backdrop-blur-sm transition-all group ${onClick ? 'cursor-pointer hover:shadow-xl' : ''}`}
       style={{
         background: `linear-gradient(135deg, ${current.color}15, ${current.color}08)`,
         borderColor: `${current.color}40`,
@@ -22,13 +29,13 @@ export function LevelBadge() {
     >
       {/* Level icon */}
       <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0"
+        className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0 transition-transform group-hover:scale-110"
         style={{ background: `${current.color}25`, color: current.color }}
       >
         {current.level}
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1 text-left">
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className="text-xs font-black uppercase tracking-widest" style={{ color: current.color }}>
             {current.name}
@@ -53,6 +60,12 @@ export function LevelBadge() {
         <Zap className="w-3.5 h-3.5" style={{ color: current.color }} />
         <span className="text-xs font-bold tabular-nums">{xp.toLocaleString()}</span>
       </div>
-    </motion.div>
+
+      {onClick && (
+        <div className="hidden md:flex ml-1 w-0 overflow-hidden group-hover:w-16 transition-all duration-300 opacity-0 group-hover:opacity-100 items-center justify-end">
+          <span className="text-[9px] font-black uppercase tracking-widest text-white/50 whitespace-nowrap">View Levels</span>
+        </div>
+      )}
+    </motion.button>
   )
 }

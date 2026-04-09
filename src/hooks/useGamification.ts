@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { getLevelInfo, type LevelInfo, XP_PER_VIDEO, XP_PER_FOCUS_SESSION } from "@/lib/gamification"
-
-const STORAGE_KEY = "studyflow_xp"
+import { useAuth } from "@/lib/auth-context"
+import { updateUserStatsAction } from "@/app/actions"
 
 interface GamificationState {
   xp: number
@@ -14,36 +14,32 @@ interface GamificationState {
 }
 
 export function useGamification(): GamificationState {
-  const [xp, setXP] = React.useState(0)
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      try { setXP(Number(JSON.parse(raw))) } catch {}
-    }
-  }, [])
+  const { user, updateUser } = useAuth()
+  
+  const xp = user?.xp || 0
 
   const addXP = React.useCallback((amount: number) => {
+    if (!user) return { leveledUp: false }
+
     let leveledUp = false
     let newLevel: number | undefined
     let newLevelName: string | undefined
 
-    setXP(prev => {
-      const nextXP = prev + amount
-      const prevInfo = getLevelInfo(prev)
-      const nextInfo = getLevelInfo(nextXP)
-      if (nextInfo.current.level > prevInfo.current.level) {
-        leveledUp = true
-        newLevel = nextInfo.current.level
-        newLevelName = nextInfo.current.name
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextXP))
-      return nextXP
-    })
+    const nextXP = Math.max(0, xp + amount)
+    const prevInfo = getLevelInfo(xp)
+    const nextInfo = getLevelInfo(nextXP)
+
+    if (nextInfo.current.level > prevInfo.current.level) {
+      leveledUp = true
+      newLevel = nextInfo.current.level
+      newLevelName = nextInfo.current.name
+    }
+
+    updateUser({ xp: nextXP })
+    updateUserStatsAction({ xp: nextXP })
 
     return { leveledUp, newLevel, newLevelName }
-  }, [])
+  }, [user, xp, updateUser])
 
   const levelInfo = getLevelInfo(xp)
 

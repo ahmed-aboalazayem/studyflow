@@ -65,9 +65,9 @@ export function LandingSections() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className={`glass bg-gradient-to-br ${feature.color} border ${feature.border} rounded-[2rem] p-6 sm:p-8 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500`}
+                className={`glass bg-gradient-to-br ${feature.color} border ${feature.border} rounded-[2rem] p-6 sm:p-8 relative overflow-hidden group transition-transform duration-500`}
               >
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-all duration-700 pointer-events-none">
+                <div className="absolute top-0 right-0 p-8 opacity-10 transition-all duration-700 pointer-events-none">
                   {feature.icon}
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-black/40 flex items-center justify-center mb-6 border border-white/5 backdrop-blur-md">
@@ -124,7 +124,7 @@ export function LandingSections() {
                 transition={{ delay: i * 0.2, duration: 0.5 }}
                 className="relative flex flex-col items-center group pt-2 md:pt-0"
               >
-                <div className="w-24 h-24 rounded-full bg-black/60 border-2 border-primary/30 flex items-center justify-center mb-6 relative z-10 shadow-[0_0_30px_rgba(255,31,31,0.1)] group-hover:scale-110 group-hover:border-primary group-hover:shadow-[0_0_40px_rgba(255,31,31,0.4)] transition-all duration-500 backdrop-blur-xl">
+                <div className="w-24 h-24 rounded-full bg-black/60 border-2 border-primary/30 flex items-center justify-center mb-6 relative z-10 shadow-[0_0_30px_rgba(255,31,31,0.1)] group-hover:border-primary group-hover:shadow-[0_0_40px_rgba(255,31,31,0.4)] transition-all duration-500 backdrop-blur-xl">
                   <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-white/40">{item.step}</span>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
@@ -154,9 +154,9 @@ export function LandingSections() {
               Join StudyFlow today. Transform the way you learn, build unbreakable habits, and rule your own leaderboard.
             </p>
             <Link href={user ? "/dashboard" : "/login"} className="w-full sm:w-auto block px-4 sm:px-0">
-              <Button className="w-full sm:w-auto h-14 md:h-16 px-8 md:px-10 text-lg md:text-xl font-black bg-white text-black hover:bg-white/90 shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] transition-all hover:-translate-y-2 rounded-full group">
+              <Button className="w-full sm:w-auto h-14 md:h-16 px-8 md:px-10 text-lg md:text-xl font-black bg-white text-black hover:bg-white/90 shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] transition-all rounded-full group">
                 {user ? "Go to Dashboard" : "Get Started for Free"}
-                <ArrowRight className="w-5 h-5 md:w-6 md:h-6 ml-2 md:ml-3 group-hover:translate-x-2 transition-transform" />
+                <ArrowRight className="w-5 h-5 md:w-6 md:h-6 ml-2 md:ml-3 transition-transform" />
               </Button>
             </Link>
           </motion.div>

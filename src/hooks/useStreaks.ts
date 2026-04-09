@@ -1,13 +1,8 @@
 "use client"
 
 import * as React from "react"
-
-interface StreakData {
-  count: number
-  lastStudyDate: string // ISO date string YYYY-MM-DD
-}
-
-const STORAGE_KEY = "studyflow_streak"
+import { useAuth } from "@/lib/auth-context"
+import { updateUserStatsAction } from "@/app/actions"
 
 function todayISO() {
   return new Date().toISOString().split("T")[0]
@@ -20,53 +15,38 @@ function yesterdayISO() {
 }
 
 export function useStreaks() {
-  const [streak, setStreak] = React.useState(0)
+  const { user, updateUser } = useAuth()
+
+  const streak = user?.streak || 0
+  // Handle case where lastStudyDate is from the database as a string or Date object
+  const lastDate = user?.lastStudyDate ? new Date(user.lastStudyDate).toISOString().split("T")[0] : ""
 
   React.useEffect(() => {
-    if (typeof window === "undefined") return
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      try {
-        const data: StreakData = JSON.parse(raw)
-        // If last study was not today or yesterday, streak should be 0
-        if (data.lastStudyDate !== todayISO() && data.lastStudyDate !== yesterdayISO()) {
-          const reset: StreakData = { count: 0, lastStudyDate: data.lastStudyDate }
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(reset))
-          setStreak(0)
-        } else {
-          setStreak(data.count)
-        }
-      } catch {
-        setStreak(0)
-      }
+    if (!user) return
+    if (lastDate && lastDate !== todayISO() && lastDate !== yesterdayISO() && streak > 0) {
+      updateUser({ streak: 0 })
+      updateUserStatsAction({ streak: 0 })
     }
-  }, [])
+  }, [user, lastDate, streak, updateUser])
 
   const recordStudy = React.useCallback(() => {
-    if (typeof window === "undefined") return
+    if (!user) return
     const today = todayISO()
     const yesterday = yesterdayISO()
-    const raw = localStorage.getItem(STORAGE_KEY)
-    let data: StreakData = { count: 0, lastStudyDate: "" }
-    if (raw) {
-      try { data = JSON.parse(raw) } catch {}
-    }
 
-    let newCount = data.count
-    if (data.lastStudyDate === today) {
-      // Already recorded today, no change
+    let newCount = streak
+    if (lastDate === today) {
       return
-    } else if (data.lastStudyDate === yesterday) {
-      newCount = data.count + 1
+    } else if (lastDate === yesterday) {
+      newCount = streak + 1
     } else {
-      // Gap in study, reset to 1
       newCount = 1
     }
 
-    const next: StreakData = { count: newCount, lastStudyDate: today }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    setStreak(newCount)
-  }, [])
+    const nextDate = new Date()
+    updateUser({ streak: newCount, lastStudyDate: nextDate })
+    updateUserStatsAction({ streak: newCount, lastStudyDate: nextDate })
+  }, [user, streak, lastDate, updateUser])
 
   const isOnFire = streak >= 3
 

@@ -12,9 +12,11 @@ import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
 import { LevelBadge } from "@/components/ui/LevelBadge"
 import { StreakWidget } from "@/components/ui/StreakWidget"
 import { ActivityHeatmap } from "@/components/ui/ActivityHeatmap"
+import { LevelsPreviewModal } from "@/components/ui/LevelsPreviewModal"
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [isLevelsModalOpen, setIsLevelsModalOpen] = React.useState(false)
   const { courses, fetchCourses, isLoaded } = useStore()
   const { user, isLoading } = useAuth()
   const router = useRouter()
@@ -66,8 +68,8 @@ export default function Dashboard() {
             </p>
             {/* Streak & Level widgets */}
             <div className="flex flex-wrap items-center gap-3 mt-3">
-              <LevelBadge />
-              <StreakWidget />
+              <LevelBadge onClick={() => setIsLevelsModalOpen(true)} />
+              <StreakWidget onClick={() => setIsLevelsModalOpen(true)} />
             </div>
           </div>
           
@@ -129,6 +131,8 @@ export default function Dashboard() {
           <ActivityHeatmap />
         </div>
       </div>
+      
+      <LevelsPreviewModal isOpen={isLevelsModalOpen} onClose={() => setIsLevelsModalOpen(false)} />
     </main>
   )
 }

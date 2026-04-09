@@ -28,6 +28,7 @@ export interface Course {
   completedTimeSeconds?: number
   ownership?: 'owned' | 'shared'
   ownerName?: string | null
+  createdAt: string
 }
 
 interface StoreState {
@@ -72,7 +73,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       totalTimeSeconds: c.totalTimeSeconds,
       completedTimeSeconds: c.completedTimeSeconds,
       ownership: c.ownership as any,
-      ownerName: c.ownerName
+      ownerName: c.ownerName,
+      createdAt: c.createdAt?.toString() ?? new Date().toISOString()
     }))
     
     const details: Record<string, DayBlockData[]> = {}

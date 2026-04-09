@@ -43,11 +43,15 @@ export default function CourseDetailPage() {
   const { logActivity } = useActivityLog()
   const { enqueue, ToastContainer } = useXPToastQueue()
 
-  const handleItemComplete = React.useCallback(() => {
-    const result = addXP(XP_PER_VIDEO)
-    enqueue({ xpGain: XP_PER_VIDEO, leveledUp: result.leveledUp, newLevelName: result.newLevelName, color: levelInfo.current.color })
-    recordStudy()
-    logActivity()
+  const handleItemToggleXP = React.useCallback((isCompleted: boolean) => {
+    if (isCompleted) {
+      const result = addXP(XP_PER_VIDEO)
+      enqueue({ xpGain: XP_PER_VIDEO, leveledUp: result.leveledUp, newLevelName: result.newLevelName, color: levelInfo.current.color })
+      recordStudy()
+      logActivity()
+    } else {
+      addXP(-XP_PER_VIDEO)
+    }
   }, [addXP, XP_PER_VIDEO, enqueue, levelInfo, recordStudy, logActivity])
 
   const courseId = params.id as string
@@ -411,7 +415,7 @@ export default function CourseDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {blocks.map((block, index) => (
               <div key={block.id} ref={index === currentStudyIndex ? currentStudyRef : undefined}>
-                <DayBlock block={block} isCurrentStudy={index === currentStudyIndex} onChange={handleBlockChange} onItemComplete={handleItemComplete} />
+                <DayBlock block={block} isCurrentStudy={index === currentStudyIndex} onChange={handleBlockChange} onItemToggleXP={handleItemToggleXP} />
               </div>
             ))}
             

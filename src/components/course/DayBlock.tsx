@@ -22,10 +22,10 @@ interface DayBlockProps {
   block: DayBlockData
   isCurrentStudy?: boolean
   onChange?: (block: DayBlockData) => void
-  onItemComplete?: () => void
+  onItemToggleXP?: (isCompleted: boolean) => void
 }
 
-export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentStudy = false, onItemComplete }: DayBlockProps) => {
+export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentStudy = false, onItemToggleXP }: DayBlockProps) => {
   const [block, setBlockState] = React.useState(initialBlock)
   const [isCelebrating, setIsCelebrating] = React.useState(false)
   const prevProgressRef = React.useRef(0)
@@ -294,7 +294,7 @@ export const DayBlock = React.memo(({ block: initialBlock, onChange, isCurrentSt
                       index={index}
                       onToggle={toggleItem}
                       onToggleImportant={doToggleImportant}
-                      onComplete={onItemComplete}
+                      onToggleXP={onItemToggleXP}
                     />
                   ))}
                 </AnimatePresence>

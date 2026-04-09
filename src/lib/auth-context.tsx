@@ -8,6 +8,10 @@ interface User {
   username: string
   displayName?: string | null
   imageUrl?: string | null
+  xp: number
+  streak: number
+  lastStudyDate?: Date | string | null
+  activityData?: any | null
 }
 
 interface AuthContextType {
@@ -17,6 +21,7 @@ interface AuthContextType {
   register: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
   logout: () => Promise<void>
   checkSession: () => Promise<void>
+  updateUser: (updates: Partial<User>) => void
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined)
@@ -58,8 +63,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/login'
   }
 
+  const updateUser = React.useCallback((updates: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : prev)
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, checkSession }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, checkSession, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

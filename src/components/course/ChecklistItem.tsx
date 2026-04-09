@@ -20,26 +20,26 @@ interface ChecklistItemProps {
   onToggle: (id: string, completed: boolean) => void
   onToggleImportant: (id: string, isImportant: boolean) => void
   index: number
-  onComplete?: () => void
+  onToggleXP?: (isCompleted: boolean) => void
 }
 
-export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, index, onComplete }: ChecklistItemProps) => {
+export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, index, onToggleXP }: ChecklistItemProps) => {
   const handleCheckToggle = React.useCallback(() => {
-    if (!item.completed) {
+    const newCompletedState = !item.completed;
+    if (newCompletedState) {
       playSound('taskComplete')
-      onComplete?.()
     } else {
       playSound('taskUndo')
     }
-    onToggle(item.id, !item.completed)
-  }, [item.id, item.completed, onToggle, onComplete])
+    onToggleXP?.(newCompletedState)
+    onToggle(item.id, newCompletedState)
+  }, [item.id, item.completed, onToggle, onToggleXP])
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 15, delay: index * 0.05 }}
-      whileHover={{ x: 8 }}
       className={`group relative flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-colors duration-300 will-change-transform ${
         item.isImportant 
           ? `important bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.2)] ${item.completed ? 'opacity-80' : ''}`
@@ -52,8 +52,8 @@ export const ChecklistItem = React.memo(({ item, onToggle, onToggleImportant, in
         onClick={() => onToggleImportant(item.id, !item.isImportant)}
         className={`relative flex items-center justify-center shrink-0 p-1.5 rounded-full transition-all duration-150 ${
           item.isImportant 
-            ? "text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.9)] hover:scale-110" 
-            : "text-foreground/30 hover:text-yellow-400/70 hover:scale-110 hover:bg-yellow-400/10"
+            ? "text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.9)]" 
+            : "text-foreground/30 hover:text-yellow-400/70 hover:bg-yellow-400/10"
         }`}
         title={item.isImportant ? "Unmark as important" : "Mark as important"}
       >

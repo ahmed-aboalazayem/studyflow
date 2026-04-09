@@ -161,7 +161,7 @@ export function FocusMode() {
             </span>
           </>
         ) : (
-          <Brain className="w-8 h-8 text-primary group-hover:scale-110 transition-transform duration-150" />
+          <Brain className="w-8 h-8 text-primary transition-transform duration-150" />
         )}
       </Button>
 

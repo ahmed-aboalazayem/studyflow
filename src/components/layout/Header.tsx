@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, BarChart3, Plus, LogOut, User, Trophy, Menu, X } from "lucide-react"
+import { BookOpen, BarChart3, Plus, LogOut, User, Trophy, Menu, X, Map } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
 
@@ -48,6 +48,17 @@ export function Header() {
               >
                 <BarChart3 className="w-4 h-4" />
                 Progress
+              </Button>
+            </Link>
+
+            <Link href="/map">
+              <Button
+                variant={pathname === "/map" ? "glass" : "ghost"}
+                size="sm"
+                className="flex items-center gap-2 rounded-lg text-emerald-400 hover:text-emerald-300"
+              >
+                <Map className="w-4 h-4 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
+                Map
               </Button>
             </Link>
 
@@ -130,6 +141,12 @@ export function Header() {
               <Button variant={pathname === "/progress" ? "glass" : "ghost"} className="w-full justify-start gap-3">
                 <BarChart3 className="w-5 h-5" />
                 Progress
+              </Button>
+            </Link>
+            <Link href="/map" onClick={() => setIsMenuOpen(false)}>
+              <Button variant={pathname === "/map" ? "glass" : "ghost"} className="w-full justify-start gap-3 text-emerald-400">
+                <Map className="w-5 h-5" />
+                Map
               </Button>
             </Link>
             <Link href="/competition" onClick={() => setIsMenuOpen(false)}>

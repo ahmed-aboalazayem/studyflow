@@ -19,6 +19,7 @@ export interface CourseData {
   completedTimeSeconds?: number
   ownership?: 'owned' | 'shared'
   ownerName?: string | null
+  createdAt?: string
 }
 
 interface CourseCardProps {
