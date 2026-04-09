@@ -14,10 +14,12 @@ import {
 import Link from "next/link"
 
 // ─── Constants ─────────────────────────────────────────────────────────────
-const SCALE_FACTOR = 40          // px per video
-const MIN_SPACING  = 220         // minimum px between nodes
-const MAX_SPACING  = 600         // cap for giant sections
-const PATH_STROKE  = 10
+const SCALE_FACTOR_DESKTOP = 40
+const SCALE_FACTOR_MOBILE  = 20
+const MIN_SPACING_DESKTOP  = 220
+const MIN_SPACING_MOBILE   = 130
+const MAX_SPACING          = 600
+const PATH_STROKE          = 10
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface Competitor {
@@ -32,28 +34,32 @@ interface Competitor {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-function nodeSpacing(totalVideos: number): number {
-  return Math.min(MAX_SPACING, Math.max(MIN_SPACING, totalVideos * SCALE_FACTOR))
+function nodeSpacing(totalVideos: number, isMobile: boolean): number {
+  const scale = isMobile ? SCALE_FACTOR_MOBILE : SCALE_FACTOR_DESKTOP
+  const min   = isMobile ? MIN_SPACING_MOBILE : MIN_SPACING_DESKTOP
+  return Math.min(MAX_SPACING, Math.max(min, totalVideos * scale))
 }
 
 // xPercent based on whether the node index is even or odd (zigzag)
 function xPct(index: number, isMobile: boolean): number {
   if (isMobile) {
-    return index % 2 === 0 ? 38 : 62 
+    // Perfectly centered with a tiny organic wobble for mobile
+    return 50 + (index % 2 === 0 ? -2 : 2)
   }
   return index % 2 === 0 ? 28 : 72
 }
 
 // Gather cumulative Y positions for all nodes
-function buildYPositions(blocks: { totalItems: number }[], extraFinalSpacing = MIN_SPACING): number[] {
+function buildYPositions(blocks: { totalItems: number }[], isMobile: boolean): number[] {
   const positions: number[] = []
-  let cumY = MIN_SPACING / 2 // top padding
+  const minSpacing = isMobile ? MIN_SPACING_MOBILE : MIN_SPACING_DESKTOP
+  let cumY = minSpacing / 2 // top padding
   for (const block of blocks) {
     positions.push(cumY)
-    cumY += nodeSpacing(block.totalItems)
+    cumY += nodeSpacing(block.totalItems, isMobile)
   }
   // Final "Zenith" crown node
-  positions.push(cumY + extraFinalSpacing)
+  positions.push(cumY + minSpacing)
   return positions
 }
 
@@ -185,9 +191,11 @@ export default function MapPage() {
   const [loadingCompetitors, setLoadingCompetitors] = React.useState(false)
   const [hoveredUserId, setHoveredUserId] = React.useState<number | null>(null)
   const [isMobile, setIsMobile] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
 
   // ── responsive check
   React.useEffect(() => {
+    setMounted(true)
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener("resize", checkMobile)
@@ -251,9 +259,9 @@ export default function MapPage() {
     ]
   }, [enrichedBlocks])
 
-  // Y positions
-  const yPositions = React.useMemo(() => buildYPositions(mapNodes), [mapNodes])
-  const totalMapHeight = (yPositions[yPositions.length - 1] ?? 400) + MIN_SPACING
+  // Responsive positions
+  const yPositions = React.useMemo(() => buildYPositions(mapNodes, isMobile), [mapNodes, isMobile])
+  const totalMapHeight = (yPositions[yPositions.length - 1] ?? 400) + (isMobile ? MIN_SPACING_MOBILE : MIN_SPACING_DESKTOP)
 
   // My progress
   const myProgress = React.useMemo(() => {
@@ -313,7 +321,7 @@ export default function MapPage() {
     })
   }, [competitors, myProgress, mapNodes, yPositions])
 
-  if (!isLoaded || isLoading) {
+  if (!isLoaded || isLoading || !mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-4 animate-pulse">
@@ -325,7 +333,7 @@ export default function MapPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-black overflow-hidden pb-40">
+    <main className="relative min-h-screen bg-black overflow-x-hidden pb-40">
       <BackgroundEffect />
       {/* Nature atmosphere */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#011a0e]/90 via-[#021f12]/60 to-black pointer-events-none" />
@@ -334,7 +342,7 @@ export default function MapPage() {
       <div className="absolute bottom-0 left-0 right-0 h-64 pointer-events-none opacity-20"
         style={{ background: "radial-gradient(ellipse 140% 80% at 50% 110%, #052e1a 0%, transparent 70%)" }} />
 
-      <div className="container mx-auto px-4 pt-24 relative z-10 max-w-6xl">
+      <div className="container mx-auto px-2 md:px-4 pt-24 relative z-10 max-w-6xl">
 
         {/* ── Header ─────────────────────────────────────────── */}
         <div className="text-center mb-12">
