@@ -63,7 +63,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const fetchCourses = React.useCallback(async () => {
     const data = await getCourses()
     // Transform Prisma data to Store state
-    const mappedCourses: CourseData[] = data.map((c: any) => ({
+    const mappedCourses: Course[] = data.map((c: any) => ({
       id: c.id,
       title: c.title,
       imageUrl: c.imageUrl,
