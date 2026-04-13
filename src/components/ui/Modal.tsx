@@ -13,18 +13,19 @@ interface ModalProps {
   type?: "success" | "error" | "info"
   actionText?: string
   onAction?: () => void
+  children?: React.ReactNode
 }
 
-export function Modal({ 
-  isOpen, 
-  onClose, 
-  title, 
-  description, 
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  description,
   type = "info",
   actionText,
-  onAction
+  onAction,
+  children,
 }: ModalProps) {
-  // Close on Esc key
   React.useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -34,93 +35,115 @@ export function Modal({
   }, [onClose])
 
   const icons = {
-    success: <CheckCircle2 className="w-12 h-12 text-emerald-400" />,
-    error: <AlertCircle className="w-12 h-12 text-primary" />,
-    info: <Info className="w-12 h-12 text-blue-400" />
+    success: <CheckCircle2 className="w-12 h-12 text-emerald-500" />,
+    error: <AlertCircle className="w-12 h-12 text-red-500" />,
+    info: <Info className="w-12 h-12 text-blue-500" />,
   }
 
-  const borderColors = {
-    success: "border-emerald-500/20",
-    error: "border-primary/20",
-    info: "border-blue-500/20"
+  const accent = {
+    success: "border-emerald-500",
+    error: "border-red-500",
+    info: "border-blue-500",
   }
 
-  const bgGlows = {
-    success: "bg-emerald-500/5",
-    error: "bg-primary/5",
-    info: "bg-blue-500/5"
+  const accentBg = {
+    success: "bg-emerald-50",
+    error: "bg-red-50",
+    info: "bg-blue-50",
+  }
+
+  const accentButton = {
+    success: "bg-emerald-600 hover:bg-emerald-700",
+    error: "bg-red-600 hover:bg-red-700",
+    info: "bg-blue-600 hover:bg-blue-700",
   }
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70"
           />
 
-          {/* Modal Content */}
+          {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`relative w-full max-w-md glass border ${borderColors[type]} rounded-[2.5rem] overflow-hidden shadow-2xl ${bgGlows[type]}`}
+            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className={`relative w-full max-w-md bg-black/90 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden`}
           >
+            {/* Header Accent */}
+            <div className={`h-1.5 w-full ${type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-primary' : 'bg-primary/50'}`} />
+
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 transition-colors text-white/40 hover:text-white"
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/5 transition"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-white/40" />
             </button>
 
-            <div className="p-10 pt-12 flex flex-col items-center text-center">
-              <div className="mb-6 p-4 rounded-3xl bg-white/5 border border-white/10">
-                {icons[type]}
-              </div>
-              
-              <h3 className="text-2xl font-black text-white tracking-tight mb-3">
+            <div className="p-8 text-center">
+              {/* Icon */}
+              {type !== 'info' && (
+                <div
+                  className={`mx-auto mb-5 w-16 h-16 flex items-center justify-center rounded-full ${type === 'success' ? 'bg-emerald-500/10' : 'bg-primary/10'}`}
+                >
+                  {icons[type]}
+                </div>
+              )}
+
+              {/* Title */}
+              <h3 className="text-xl font-bold text-white mb-2">
                 {title}
               </h3>
-              
-              <p className="text-foreground/40 text-lg leading-relaxed mb-10">
+
+              {/* Description */}
+              <p className="text-white/40 text-sm leading-relaxed mb-6">
                 {description}
               </p>
 
-              <div className="flex w-full gap-3 mt-auto">
-                {actionText && (
-                  <Button
-                    onClick={() => {
-                      onAction?.()
-                      onClose()
-                    }}
-                    className="flex-1 h-14 bg-white text-black hover:bg-white/90 font-black rounded-2xl active:scale-95 transition-transform"
-                  >
-                    {actionText}
-                  </Button>
-                )}
-                <Button
-                  variant="glass"
-                  onClick={onClose}
-                  className={`flex-1 h-14 border border-white/10 font-bold rounded-2xl transition-all active:scale-95 ${!actionText ? "w-full" : ""}`}
-                >
-                  {actionText ? "Cancel" : "Close"}
-                </Button>
-              </div>
-            </div>
+              {/* Children (e.g. Forms) */}
+              {children && (
+                <div className="text-left mb-6">
+                  {children}
+                </div>
+              )}
 
-            {/* Bottom Accent Line */}
-            <div className={`h-1.5 w-full bg-gradient-to-r ${
-              type === 'success' ? 'from-emerald-500/0 via-emerald-500/50 to-emerald-500/0' :
-              type === 'error' ? 'from-primary/0 via-primary/50 to-primary/0' :
-              'from-blue-500/0 via-blue-500/50 to-blue-500/0'
-            }`} />
+              {/* Buttons (only if actionText is present, or if no children) */}
+              {!children && (
+                <div className="flex gap-3">
+                  {actionText && (
+                    <Button
+                      onClick={() => {
+                        onAction?.()
+                        onClose()
+                      }}
+                      className={`flex-1 text-white font-semibold rounded-lg h-11 transition bg-primary hover:bg-primary/80`}
+                    >
+                      {actionText}
+                    </Button>
+                  )}
+
+                  <Button
+                    onClick={onClose}
+                    variant="ghost"
+                    className={`flex-1 text-white/40 h-11 rounded-lg font-medium hover:bg-white/5 ${
+                      !actionText ? "w-full" : ""
+                    }`}
+                  >
+                    {actionText ? "Cancel" : "Close"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>
       )}

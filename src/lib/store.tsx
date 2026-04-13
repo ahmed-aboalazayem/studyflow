@@ -14,7 +14,12 @@ import {
   toggleAllInBlockAction,
   updateBlockTitle as updateBlockTitleAction,
   deleteAccount as deleteAccountAction,
-  toggleItemImportant as toggleItemImportantAction
+  toggleItemImportant as toggleItemImportantAction,
+  getFolders as getFoldersAction,
+  createFolder as createFolderAction,
+  deleteFolder as deleteFolderAction,
+  moveCourseToFolder as moveCourseToFolderAction,
+  renameFolder as renameFolderAction
 } from "@/app/actions"
 
 export interface Course {
@@ -28,11 +33,19 @@ export interface Course {
   completedTimeSeconds?: number
   ownership?: 'owned' | 'shared'
   ownerName?: string | null
+  folderId?: string | null
+  createdAt: string
+}
+
+export interface Folder {
+  id: string
+  name: string
   createdAt: string
 }
 
 interface StoreState {
   courses: Course[]
+  folders: Folder[]
   courseDetails: Record<string, DayBlockData[]>
   isLoaded: boolean
   addCourse: (course: { title: string; imageUrl: string }) => Promise<any>
@@ -47,18 +60,26 @@ interface StoreState {
   deleteCourse: (courseId: string) => Promise<void>
   deleteDayBlock: (courseId: string, blockId: string) => Promise<void>
   deleteAccount: () => Promise<any>
-  recentlySharedWith: string[]
-  addRecentlyShared: (username: string) => void
   toggleItemImportant: (itemId: string, isImportant: boolean) => Promise<void>
+  createFolder: (name: string) => Promise<void>
+  deleteFolder: (folderId: string) => Promise<void>
+  renameFolder: (folderId: string, name: string) => Promise<void>
+  moveCourseToFolder: (courseId: string, folderId: string | null) => Promise<void>
+  searchQuery: string
+  setSearchQuery: (query: string) => void
+  isAddFolderModalOpen: boolean
+  setIsAddFolderModalOpen: (open: boolean) => void
 }
 
 const StoreContext = React.createContext<StoreState | undefined>(undefined)
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [courses, setCourses] = React.useState<Course[]>([])
+  const [folders, setFolders] = React.useState<Folder[]>([])
   const [courseDetails, setCourseDetails] = React.useState<Record<string, DayBlockData[]>>({})
   const [isLoaded, setIsLoaded] = React.useState(false)
-  const [recentlySharedWith, setRecentlySharedWith] = React.useState<string[]>([])
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [isAddFolderModalOpen, setIsAddFolderModalOpen] = React.useState(false)
 
   const fetchCourses = React.useCallback(async () => {
     const data = await getCourses()
@@ -74,7 +95,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       completedTimeSeconds: c.completedTimeSeconds,
       ownership: c.ownership as any,
       ownerName: c.ownerName,
+      folderId: c.folderId,
       createdAt: c.createdAt?.toString() ?? new Date().toISOString()
+    }))
+
+    const folderData = await getFoldersAction()
+    const mappedFolders: Folder[] = folderData.map((f: any) => ({
+      id: f.id,
+      name: f.name,
+      createdAt: f.createdAt?.toString() ?? new Date().toISOString()
     }))
     
     const details: Record<string, DayBlockData[]> = {}
@@ -95,6 +124,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     })
 
     setCourses(mappedCourses)
+    setFolders(mappedFolders)
     setCourseDetails(details)
     setIsLoaded(true)
   }, [])
@@ -102,25 +132,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Initial load
   React.useEffect(() => {
     fetchCourses()
-    // Load recently shared from localStorage
-    const saved = localStorage.getItem('studyflow_recent_shares')
-    if (saved) {
-      try {
-        setRecentlySharedWith(JSON.parse(saved))
-      } catch (e) {
-        console.error('Failed to parse recent shares', e)
-      }
-    }
   }, [fetchCourses])
 
-  const addRecentlyShared = React.useCallback((username: string) => {
-    setRecentlySharedWith(prev => {
-      const filtered = prev.filter(u => u !== username)
-      const next = [username, ...filtered].slice(0, 5) // Keep last 5
-      localStorage.setItem('studyflow_recent_shares', JSON.stringify(next))
-      return next
-    })
-  }, [])
+
 
   const fetchCourseDetail = React.useCallback(async (courseId: string) => {
     // Already loaded in fetchCourses for now as it fetches the graph
@@ -243,8 +257,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await toggleItemAction(itemId, completed)
       if ('error' in result) throw new Error(result.error)
-      // Final sync to ensure everything matches server truth (e.g. updatedAt timestamps)
-      await fetchCourses()
     } catch (err) {
       console.error("Failed to toggle item", err)
       // Rollback on error
@@ -326,7 +338,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await toggleAllInBlockAction(blockId, completed)
       if ('error' in result) throw new Error(result.error)
-      await fetchCourses()
     } catch (err) {
       console.error("Failed to toggle all in block", err)
       await fetchCourses()
@@ -398,21 +409,80 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await toggleItemImportantAction(itemId, isImportant)
       if ('error' in result) throw new Error(result.error)
-      await fetchCourses()
     } catch (err) {
       console.error("Failed to toggle important", err)
       await fetchCourses()
     }
   }, [courseDetails, fetchCourses])
 
+  const createFolder = React.useCallback(async (name: string) => {
+    // Optimistic Update
+    const tempId = `temp-${Date.now()}`
+    const newFolder: Folder = {
+      id: tempId,
+      name,
+      createdAt: new Date().toISOString()
+    }
+    setFolders(prev => [newFolder, ...prev])
+
+    try {
+      await createFolderAction(name)
+      await fetchCourses()
+    } catch (err) {
+      console.error("Failed to create folder", err)
+      await fetchCourses()
+    }
+  }, [fetchCourses])
+
+  const deleteFolder = React.useCallback(async (id: string) => {
+    // Optimistic Update
+    setFolders(prev => prev.filter(f => f.id !== id))
+    // Move courses back to root optimistically
+    setCourses(prev => prev.map(c => c.id === id ? { ...c, folderId: null } : c))
+
+    try {
+      await deleteFolderAction(id)
+      await fetchCourses()
+    } catch (err) {
+      console.error("Failed to delete folder", err)
+      await fetchCourses()
+    }
+  }, [fetchCourses])
+
+  const renameFolder = React.useCallback(async (id: string, name: string) => {
+    // Optimistic Update
+    setFolders(prev => prev.map(f => f.id === id ? { ...f, name } : f))
+
+    try {
+      await renameFolderAction(id, name)
+    } catch (err) {
+      console.error("Failed to rename folder", err)
+      await fetchCourses()
+    }
+  }, [fetchCourses])
+
+  const moveCourseToFolder = React.useCallback(async (courseId: string, folderId: string | null) => {
+    // Optimistic Update
+    setCourses(prev => prev.map(c => c.id === courseId ? { ...c, folderId } : c))
+
+    try {
+      await moveCourseToFolderAction(courseId, folderId)
+    } catch (err) {
+      console.error("Failed to move course", err)
+      await fetchCourses()
+    }
+  }, [fetchCourses])
+
   return (
     <StoreContext.Provider value={{
-      courses, courseDetails, isLoaded,
+      courses, folders, courseDetails, isLoaded,
       addCourse, updateCourseBlocks,
       fetchCourses, fetchCourseDetail,
       addDayBlock, addItemsToBlock, toggleItem, toggleAllInBlock, updateBlockTitle, toggleItemImportant,
       deleteCourse, deleteDayBlock, deleteAccount,
-      recentlySharedWith, addRecentlyShared
+      createFolder, deleteFolder, renameFolder, moveCourseToFolder,
+      searchQuery, setSearchQuery,
+      isAddFolderModalOpen, setIsAddFolderModalOpen
     }}>
       {children}
     </StoreContext.Provider>

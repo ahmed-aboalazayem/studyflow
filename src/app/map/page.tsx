@@ -5,12 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useStore } from "@/lib/store"
 import { useAuth } from "@/lib/auth-context"
 import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
-import { getCourseCompetitorProgress } from "@/app/actions"
-import {
-  TreePine, MountainSnow, Tent, User, Map as MapIcon,
-  Crown, CheckCircle2, ChevronDown, Trophy, Lock,
-  Flame, Monitor
-} from "lucide-react"
+import { Flame, Monitor, Map as MapIcon, TreePine, MountainSnow, Tent, Crown, CheckCircle2, ChevronDown, Lock, User } from "lucide-react"
 import Link from "next/link"
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -21,17 +16,7 @@ const MIN_SPACING_MOBILE   = 130
 const MAX_SPACING          = 600
 const PATH_STROKE          = 10
 
-// ─── Types ─────────────────────────────────────────────────────────────────
-interface Competitor {
-  userId: number
-  username: string
-  displayName: string | null
-  imageUrl: string | null
-  currentDayIndex: number
-  progressWithinDay: number
-  score: number
-  isCurrentUser: boolean
-}
+
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function nodeSpacing(totalVideos: number, isMobile: boolean): number {
@@ -70,26 +55,21 @@ function rankColors(rank: number) {
   return { bg: "from-amber-800/20 to-amber-800/5", border: "border-amber-800/40", text: "text-amber-700", glow: "" }
 }
 
+
+
 // ─── Avatar Dot ────────────────────────────────────────────────────────────
 function AvatarDot({
-  competitor, rank, yPositions, nodeCount,
-  onHover, hoveredId, isMobile,
-  spotIndex, totalInSpot
+  currentDayIndex, progressWithinDay, yPositions, nodeCount,
+  isMobile, user
 }: {
-  competitor: Competitor
-  rank: number
+  currentDayIndex: number
+  progressWithinDay: number
   yPositions: number[]
   nodeCount: number
-  onHover: (id: number | null) => void
-  hoveredId: number | null
   isMobile: boolean
-  spotIndex: number
-  totalInSpot: number
+  user: any
 }) {
-  const isMe = competitor.isCurrentUser
-  const isLeader = rank === 0
-
-  const dayIdx   = Math.min(competitor.currentDayIndex, nodeCount - 1)
+  const dayIdx   = Math.min(currentDayIndex, nodeCount - 1)
   const nextIdx  = Math.min(dayIdx + 1, yPositions.length - 1)
 
   const curX  = xPct(dayIdx, isMobile)
@@ -97,89 +77,35 @@ function AvatarDot({
   const nxtX  = xPct(nextIdx, isMobile)
   const nxtY  = yPositions[nextIdx] ?? curY
 
-  const p = competitor.progressWithinDay
-  let finalX = curX + (nxtX - curX) * p
+  const p = progressWithinDay
+  const finalX = curX + (nxtX - curX) * p
   const finalY = curY + (nxtY - curY) * p
 
-  // Collision offset: side-by-side if multiple people in same p
-  if (totalInSpot > 1) {
-    const spread = isMobile ? 32 : 44 // px
-    const totalWidth = (totalInSpot - 1) * spread
-    const startOffset = -totalWidth / 2
-    const pixelOffset = startOffset + (spotIndex * spread)
-    // Convert px offset back to rough % for absolute positioning (approximate based on typical 6xl container)
-    // Actually better to just use transform: translateX
-  }
-
-  const size   = isMe ? (isMobile ? 48 : 56) : (isMobile ? 36 : 42)
-  const zIndex = isMe ? 40 : 30
+  const size   = isMobile ? 48 : 56
 
   return (
     <motion.div
       layout
       animate={{ left: `${finalX}%`, top: finalY }}
       transition={{ type: "spring", stiffness: 60, damping: 18 }}
-      className="absolute pointer-events-auto"
-      style={{ 
-        x: totalInSpot > 1 ? `calc(-50% + ${(spotIndex - (totalInSpot - 1) / 2) * (isMobile ? 32 : 44)}px)` : "-50%", 
-        y: "-50%", 
-        zIndex 
-      }}
-      onMouseEnter={() => onHover(competitor.userId)}
-      onMouseLeave={() => onHover(null)}
+      className="absolute pointer-events-auto -translate-x-1/2 -translate-y-1/2 z-40"
     >
-      {/* Glow halo for current user */}
-      {isMe && (
-        <div className="absolute inset-0 rounded-full blur-xl bg-emerald-400/40 scale-150 animate-pulse pointer-events-none" />
-      )}
+      <div className="absolute inset-0 rounded-full blur-xl bg-emerald-400/40 scale-150 animate-pulse pointer-events-none" />
 
-      {/* Crown for leader */}
-      {isLeader && (
-        <div className="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-10">
-          <Crown className="w-5 h-5 text-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.9)]" />
-        </div>
-      )}
-
-      {/* Avatar image */}
       <div
-        className={`rounded-full overflow-hidden flex items-center justify-center border-[3px] ${
-          isMe
-            ? "border-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.8)]"
-            : isLeader
-            ? "border-yellow-400 shadow-[0_0_16px_rgba(234,179,8,0.5)]"
-            : "border-white/30 opacity-80"
-        }`}
-        style={{ width: size, height: size, backgroundColor: "#000" }}
+        className="rounded-full overflow-hidden flex items-center justify-center border-[3px] border-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.8)] bg-black"
+        style={{ width: size, height: size }}
       >
-        {competitor.imageUrl ? (
-          <img src={competitor.imageUrl} alt="" className="w-full h-full object-cover" />
+        {user?.imageUrl ? (
+          <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
         ) : (
           <User className="text-white/60" style={{ width: size * 0.45, height: size * 0.45 }} />
         )}
       </div>
-
-      {/* Tooltip */}
-      <AnimatePresence>
-        {hoveredId === competitor.userId && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.9 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 whitespace-nowrap z-50 pointer-events-none"
-          >
-            <div className="glass border border-white/20 rounded-xl px-3 py-2 text-xs font-bold text-white shadow-2xl">
-              <span className="text-emerald-400">{competitor.displayName || competitor.username}</span>
-              <span className="text-white/40 ml-2">
-                Day {competitor.currentDayIndex + 1} · {Math.round(competitor.progressWithinDay * 100)}%
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   )
 }
+
 
 // ─── Main Page ─────────────────────────────────────────────────────────────
 export default function MapPage() {
@@ -187,9 +113,6 @@ export default function MapPage() {
   const { user, isLoading } = useAuth()
 
   const [selectedCourseId, setSelectedCourseId] = React.useState<string>("")
-  const [competitors, setCompetitors] = React.useState<Competitor[]>([])
-  const [loadingCompetitors, setLoadingCompetitors] = React.useState(false)
-  const [hoveredUserId, setHoveredUserId] = React.useState<number | null>(null)
   const [isMobile, setIsMobile] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
 
@@ -212,23 +135,7 @@ export default function MapPage() {
     }
   }, [courses, selectedCourseId])
 
-  // ── fetch competitor positions (poll every 10s)
-  const fetchCompetitors = React.useCallback(async () => {
-    if (!selectedCourseId) return
-    setLoadingCompetitors(true)
-    try {
-      const data = await getCourseCompetitorProgress(selectedCourseId)
-      setCompetitors(data as Competitor[])
-    } finally {
-      setLoadingCompetitors(false)
-    }
-  }, [selectedCourseId])
 
-  React.useEffect(() => {
-    fetchCompetitors()
-    const interval = setInterval(fetchCompetitors, 10_000)
-    return () => clearInterval(interval)
-  }, [fetchCompetitors])
 
   // ── Core data
   const activeCourse = courses.find(c => c.id === selectedCourseId)
@@ -285,16 +192,7 @@ export default function MapPage() {
     mapNodes.map((_, i) => `${xPct(i, isMobile)}%,${yPositions[i] ?? 0}`).join(" ")
   , [mapNodes, yPositions, isMobile])
 
-  // Group competitors by position key to handle offsets
-  const groupedCompetitors = React.useMemo(() => {
-    const groups: Record<string, Competitor[]> = {}
-    competitors.forEach(c => {
-      const key = `${c.currentDayIndex}-${c.progressWithinDay.toFixed(3)}` // fix minor float diffs
-      if (!groups[key]) groups[key] = []
-      groups[key].push(c)
-    })
-    return groups
-  }, [competitors])
+
 
   // Active path (up to current position)
   const { currentDayIndex, progressWithinDay } = myProgress
@@ -305,7 +203,7 @@ export default function MapPage() {
 
   // Scrolling function
   const scrollToMe = React.useCallback(() => {
-    const me = competitors.find(c => c.isCurrentUser) || myProgress
+    const me = myProgress
     // Calculate estimated Y
     const dayIdx = Math.min(me.currentDayIndex, mapNodes.length - 1)
     const nextIdx = Math.min(dayIdx + 1, yPositions.length - 1)
@@ -319,7 +217,7 @@ export default function MapPage() {
       top: finalY + 200, // Roughly maps to the 24px + 12px padding top
       behavior: 'smooth'
     })
-  }, [competitors, myProgress, mapNodes, yPositions])
+  }, [myProgress, mapNodes, yPositions])
 
   if (!isLoaded || isLoading || !mounted) {
     return (
@@ -351,7 +249,7 @@ export default function MapPage() {
             Adventure Map
           </h1>
           <p className="text-emerald-100/40 text-sm md:text-lg font-medium">
-            Compete on the same trail — see who reaches <span className="text-yellow-400">The Zenith</span> first.
+            Your personal progress trail to <span className="text-yellow-400">The Zenith</span>.
           </p>
         </div>
 
@@ -552,115 +450,21 @@ export default function MapPage() {
                   )
                 })}
 
-                 {/* ── All competitor avatars (including me) ── */}
-                {Object.values(groupedCompetitors).map((group) => 
-                  group.map((comp, idx) => {
-                    // Rank is determined by the index in the original sorted competitors array
-                    const originalRank = competitors.findIndex(c => c.userId === comp.userId)
-                    return (
+{/* Current User Avatar Dot */}
                       <AvatarDot
-                        key={comp.userId}
-                        competitor={comp}
-                        rank={originalRank}
+                        currentDayIndex={currentDayIndex}
+                        progressWithinDay={progressWithinDay}
                         yPositions={yPositions}
                         nodeCount={mapNodes.length - 1}
-                        onHover={setHoveredUserId}
-                        hoveredId={hoveredUserId}
                         isMobile={isMobile}
-                        spotIndex={idx}
-                        totalInSpot={group.length}
+                        user={user}
                       />
-                    )
-                  })
-                )}
 
               </div>
             )}
           </div>
 
-          {/* ── LEADERBOARD ──────────────────────────────────────── */}
-          <div className="w-full lg:w-72 lg:sticky lg:top-24 shrink-0">
-            <div className="glass border border-white/10 rounded-3xl p-5 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-400/10 blur-2xl rounded-full pointer-events-none" />
-              <div className="flex items-center gap-2 mb-5">
-                <Trophy className="w-5 h-5 text-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]" />
-                <h2 className="text-white font-black text-lg">Leaderboard</h2>
-                {loadingCompetitors && (
-                  <div className="ml-auto w-4 h-4 border-2 border-emerald-400/50 border-t-emerald-400 rounded-full animate-spin" />
-                )}
-              </div>
 
-              {competitors.length === 0 ? (
-                <div className="text-center py-8 text-white/30 text-sm">
-                  No competitors yet — share this course with friends!
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {competitors.map((comp, rank) => {
-                    const colors = rankColors(rank)
-                    return (
-                      <motion.div
-                        key={comp.userId}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: rank * 0.07 }}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl border bg-gradient-to-r ${colors.bg} ${colors.border} ${colors.glow} transition-all`}
-                      >
-                        {/* Rank badge */}
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${colors.text} border ${colors.border}`}>
-                          {rank === 0 ? <Crown className="w-3.5 h-3.5" /> : rank + 1}
-                        </div>
-
-                        {/* Avatar */}
-                        <div className="w-9 h-9 rounded-full overflow-hidden border border-white/20 shrink-0 bg-black">
-                          {comp.imageUrl ? (
-                            <img src={comp.imageUrl} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-full h-full p-2 text-white/40" />
-                          )}
-                        </div>
-
-                        {/* Name + stats */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1">
-                            <span className={`text-sm font-black truncate ${comp.isCurrentUser ? "text-emerald-400" : "text-white"}`}>
-                              {comp.displayName || comp.username}
-                            </span>
-                            {comp.isCurrentUser && (
-                              <span className="text-[9px] font-black text-emerald-500/70 uppercase">You</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            {/* Mini progress bar */}
-                            <div className="flex-1 h-1 bg-black/40 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-emerald-400 rounded-full"
-                                style={{ width: `${Math.round(comp.score / Math.max(1, (mapNodes.length - 1)) * 100)}%` }}
-                              />
-                            </div>
-                            <span className="text-[9px] text-white/40 font-bold tabular-nums whitespace-nowrap">
-                              Day {comp.currentDayIndex + 1}
-                            </span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Share hint */}
-              {competitors.length <= 1 && selectedCourseId && (
-                <Link
-                  href={`/course/${selectedCourseId}`}
-                  className="mt-5 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white/5 border border-white/10 text-white/50 text-xs font-bold hover:text-white hover:border-white/20 transition-all"
-                >
-                  <Flame className="w-4 h-4 text-orange-400" />
-                  Share course to compete!
-                </Link>
-              )}
-            </div>
-          </div>
 
         </div>
       </div>

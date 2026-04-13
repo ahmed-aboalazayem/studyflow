@@ -11,8 +11,6 @@ import { DayBlock, type DayBlockData, DayBlockSkeleton } from "@/components/cour
 import { useStore } from "@/lib/store"
 import { useAuth } from "@/lib/auth-context"
 import { BackgroundEffect } from "@/components/ui/BackgroundEffect"
-import { Leaderboard } from "@/components/course/Leaderboard"
-import { getLeaderboard, shareCourse } from "@/app/actions"
 import { FocusMode } from "@/components/course/FocusMode"
 import { Modal } from "@/components/ui/Modal"
 import { LoadingState } from "@/components/ui/LoadingState"
@@ -33,8 +31,6 @@ export default function CourseDetailPage() {
     addDayBlock, 
     updateCourseBlocks, 
     isLoaded, 
-    recentlySharedWith, 
-    addRecentlyShared
   } = useStore()
   const { user, isLoading } = useAuth()
 
@@ -44,15 +40,19 @@ export default function CourseDetailPage() {
   const { enqueue, ToastContainer } = useXPToastQueue()
 
   const handleItemToggleXP = React.useCallback((isCompleted: boolean) => {
-    if (isCompleted) {
+    if (isCompleted && course) {
       const result = addXP(XP_PER_VIDEO)
       enqueue({ xpGain: XP_PER_VIDEO, leveledUp: result.leveledUp, newLevelName: result.newLevelName, color: levelInfo.current.color })
       recordStudy()
-      logActivity()
-    } else {
+      logActivity({ 
+        xpGain: XP_PER_VIDEO, 
+        courseId: course.id, 
+        courseName: course.title 
+      })
+    } else if (!isCompleted) {
       addXP(-XP_PER_VIDEO)
     }
-  }, [addXP, XP_PER_VIDEO, enqueue, levelInfo, recordStudy, logActivity])
+  }, [addXP, XP_PER_VIDEO, enqueue, levelInfo, recordStudy, logActivity, course])
 
   const courseId = params.id as string
   const course = courses.find((c: any) => c.id === courseId)
@@ -81,16 +81,6 @@ export default function CourseDetailPage() {
   const remainingDays = React.useMemo(() => {
     return blocks.filter(b => b.items.length > 0 && !b.items.every(i => i.completed)).length
   }, [blocks])
-  const [leaderboardData, setLeaderboardData] = React.useState<any[]>([])
-  const [shareUsername, setShareUsername] = React.useState("")
-  const [sharing, setSharing] = React.useState(false)
-  const [leaderboardLoading, setLeaderboardLoading] = React.useState(true)
-  const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; description: string; type: "success" | "error" }>({
-    isOpen: false,
-    title: "",
-    description: "",
-    type: "success"
-  })
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
 
@@ -121,17 +111,7 @@ export default function CourseDetailPage() {
     fetchCourseDetail(courseId)
   }, [courseId, fetchCourseDetail])
 
-  React.useEffect(() => {
-    const fetchLeaderboard = async () => {
-      setLeaderboardLoading(true)
-      const data = await getLeaderboard(courseId)
-      setLeaderboardData(data)
-      setLeaderboardLoading(false)
-    }
-    if (isLoaded && course) {
-      fetchLeaderboard()
-    }
-  }, [courseId, course?.completedVideos, isLoaded, course])
+
 
   const currentStudyIndex = React.useMemo(() => {
     const idx = blocks.findIndex(block => {
@@ -227,30 +207,7 @@ export default function CourseDetailPage() {
     )
   }
 
-  const handleShare = async (target?: string) => {
-    const username = target || shareUsername
-    if (!username.trim()) return
-    setSharing(true)
-    const result = await shareCourse(courseId, username)
-    setSharing(false)
-    if ('error' in result) {
-      setModal({
-        isOpen: true,
-        title: "Sharing Failed",
-        description: result.error || "Could not share the course with this user.",
-        type: "error"
-      })
-    } else {
-      setModal({
-        isOpen: true,
-        title: "Course Shared!",
-        description: `Successfully shared "${course.title}" with ${username}.`,
-        type: "success"
-      })
-      addRecentlyShared(username)
-      if (!target) setShareUsername("")
-    }
-  }
+
 
   return (
     <main className="relative min-h-screen">
@@ -441,54 +398,8 @@ export default function CourseDetailPage() {
           </div>
 
           <div className="space-y-6">
-            {/* Share Section */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 glass">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-primary" />
-                Share Course
-              </h3>
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="Username..." 
-                    value={shareUsername}
-                    onChange={(e) => setShareUsername(e.target.value)}
-                    className="bg-black/20 border-white/10 focus:border-primary/50 text-white"
-                  />
-                  <Button 
-                    onClick={() => handleShare()}
-                    disabled={sharing}
-                    className="bg-primary hover:bg-primary/80 transition-all font-bold group"
-                  >
-                     {sharing ? "..." : "Invite"}
-                  </Button>
-                </div>
-
-                {recentlySharedWith.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Recently Shared With</p>
-                    <div className="flex flex-wrap gap-2">
-                      {recentlySharedWith.map(name => (
-                        <button
-                          key={name}
-                          onClick={() => {
-                            setShareUsername(name)
-                            handleShare(name)
-                          }}
-                          disabled={sharing}
-                          className="px-3 py-1 rounded-full bg-white/5 border border-white/5 hover:border-primary/30 hover:bg-primary/10 text-xs text-foreground/60 hover:text-primary transition-all flex items-center gap-1.5"
-                        >
-                          <UserPlus className="w-3 h-3" />
-                          {name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Leaderboard data={leaderboardData} loading={leaderboardLoading} />
+          <div className="space-y-6">
+          </div>
           </div>
         </div>
       </div>
@@ -517,13 +428,7 @@ export default function CourseDetailPage() {
         )}
       </AnimatePresence>
       
-      <Modal 
-        isOpen={modal.isOpen}
-        onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
-        title={modal.title}
-        description={modal.description}
-        type={modal.type}
-      />
+
 
       <Modal 
         isOpen={showDeleteModal}
@@ -534,7 +439,7 @@ export default function CourseDetailPage() {
         actionText="Delete Course"
         onAction={async () => {
           await deleteCourse(course.id)
-          router.push('/')
+          router.push('/dashboard')
         }}
       />
     </main>

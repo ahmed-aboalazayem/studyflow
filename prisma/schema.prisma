@@ -17,7 +17,7 @@ model User {
   lastStudyDate DateTime?
   activityData  Json?
   courses       Course[]
-  shares        CourseShare[]
+  folders       Folder[]
   progress      ItemProgress[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -33,20 +33,21 @@ model Course {
   ownerName       String?
   userId          Int
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId        String?
+  folder          Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   dayBlocks       DayBlock[]
-  shares          CourseShare[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
 
-model CourseShare {
-  courseId  String
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
   userId    Int
-  role      String   @default("view") // "view" or "edit"
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courses   Course[]
   createdAt DateTime @default(now())
-  @@id([courseId, userId])
+  updatedAt DateTime @updatedAt
 }
 
 model DayBlock {

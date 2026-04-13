@@ -4,9 +4,10 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { BookOpen, CheckCircle2, Clock, Share2, Trash2 } from "lucide-react"
+import { BookOpen, CheckCircle2, Clock, GripVertical, Share2, Trash2 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { Modal } from "@/components/ui/Modal"
+import { useDraggable } from "@dnd-kit/core"
 
 export interface CourseData {
   id: string
@@ -42,6 +43,18 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
   const { deleteCourse } = useStore()
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
 
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: course.id,
+    data: {
+      type: 'course',
+      course
+    }
+  })
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined
+
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -55,13 +68,14 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
   const studiedTime = course.completedTimeSeconds ? formatTime(course.completedTimeSeconds) : null
 
   return (
-    <Link href={`/course/${course.id}`}>
-      <motion.div
-        whileHover={{ y: -6, scale: 1.015 }}
-        transition={{ type: "spring", stiffness: 300, damping: 22 }}
-        className="will-change-transform h-full"
-      >
-        <div className="h-full flex flex-col rounded-2xl border border-white/8 bg-black/30 backdrop-blur-xl overflow-hidden group relative shadow-xl hover:shadow-[0_8px_40px_rgba(255,31,31,0.18)] hover:border-primary/40 transition-all duration-200">
+    <div ref={setNodeRef} style={style} className={`${isDragging ? 'opacity-50' : 'opacity-100'} transition-opacity`}>
+      <Link href={`/course/${course.id}`}>
+        <motion.div
+          whileHover={{ y: -6, scale: 1.015 }}
+          transition={{ type: "spring", stiffness: 300, damping: 22 }}
+          className="will-change-transform h-full"
+        >
+          <div className="h-full flex flex-col rounded-2xl border border-white/8 bg-black/30 backdrop-blur-xl overflow-hidden group relative shadow-xl hover:shadow-[0_8px_40px_rgba(255,31,31,0.18)] hover:border-primary/40 transition-all duration-200">
 
           {/* Hover glow */}
           <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/15 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-0" />
@@ -94,11 +108,26 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
               </div>
             )}
 
+            {/* Drag Handle */}
+            <div 
+              {...attributes} 
+              {...listeners}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+              className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 border border-white/10 text-white/40 hover:text-primary hover:bg-black/80 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing z-30 backdrop-blur-md opacity-0 group-hover:opacity-100"
+            >
+              <GripVertical className="w-4 h-4" />
+            </div>
+
             {/* Delete button */}
             {course.ownership !== 'shared' && (
               <button
+                type="button"
                 onClick={handleDelete}
-                className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 border border-white/10 text-white/40 hover:text-primary hover:bg-black/80 hover:border-primary/30 transition-all opacity-0 group-hover:opacity-100 z-20 backdrop-blur-md"
+                onMouseDown={(e) => e.stopPropagation()}
+                className="absolute top-3 left-3 p-2 rounded-xl bg-black/60 border border-white/10 text-white/40 hover:text-primary hover:bg-black/80 hover:border-primary/30 transition-all opacity-0 group-hover:opacity-100 z-20 backdrop-blur-md"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -106,7 +135,7 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
 
             {/* Completed badge */}
             {isComplete && (
-              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md z-10">
+              <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md z-10">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Completed</span>
               </div>
@@ -189,6 +218,7 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
           </div>
         </div>
       </motion.div>
+      </Link>
 
       <Modal
         isOpen={showDeleteModal}
@@ -199,7 +229,7 @@ export const CourseCard = React.memo(({ course }: CourseCardProps) => {
         actionText="Delete Course"
         onAction={() => deleteCourse(course.id)}
       />
-    </Link>
+    </div>
   )
 })
 

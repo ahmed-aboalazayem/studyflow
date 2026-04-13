@@ -145,7 +145,7 @@ export default function SettingsPage() {
 
   const { current: currentLevel } = levelInfo
   const totalCourses = courses.length
-  const totalCompleted = courses.filter(c => c.progress >= 100).length
+  const totalCompleted = courses.filter((c: any) => c.progress >= 100).length
 
   return (
     <main className="relative min-h-screen pt-24 pb-12">

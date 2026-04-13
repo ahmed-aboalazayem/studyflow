@@ -179,13 +179,10 @@ export async function getCourses() {
   const session = await getSession()
   if (!session) return []
 
-  // Fetch courses owned by user OR shared with user
+  // Fetch courses owned by user
   const courses = await prisma.course.findMany({
     where: {
-      OR: [
-        { userId: session.id },
-        { shares: { some: { userId: session.id } } }
-      ]
+      userId: session.id,
     },
     include: {
       user: { select: { username: true } },
@@ -201,9 +198,6 @@ export async function getCourses() {
           } 
         },
         orderBy: { sortOrder: 'asc' }
-      },
-      shares: {
-        include: { user: { select: { username: true } } }
       }
     },
     orderBy: { createdAt: 'desc' }
@@ -393,7 +387,6 @@ export async function toggleItem(itemId: string, completed: boolean) {
 
   revalidatePath(`/course/${progress.item.dayBlock.courseId}`)
   revalidatePath('/progress')
-  revalidatePath('/competition')
   return { success: true }
 }
 
@@ -450,200 +443,11 @@ export async function toggleAllInBlockAction(blockId: string, completed: boolean
     revalidatePath(`/course/${block.courseId}`)
   }
   revalidatePath('/progress')
-  revalidatePath('/competition')
   
   return { success: true }
 }
 
-export async function shareCourse(courseId: string, targetUsername: string) {
-  const session = await getSession()
-  if (!session) return { error: 'Unauthorized' }
 
-  const targetUser = await prisma.user.findUnique({
-    where: { username: targetUsername }
-  })
-
-  if (!targetUser) return { error: 'User not found' }
-  if (targetUser.id === session.id) return { error: 'You cannot share with yourself' }
-
-  // Check if target user is the owner
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    select: { userId: true }
-  })
-
-  if (course?.userId === targetUser.id) {
-    return { error: 'This user is the owner of the course and already has access' }
-  }
-
-  // Check if already shared
-  const existingShare = await prisma.courseShare.findUnique({
-    where: {
-      courseId_userId: {
-        courseId,
-        userId: targetUser.id
-      }
-    }
-  })
-
-  if (existingShare) {
-    return { error: 'This course is already shared with this user' }
-  }
-
-  try {
-    await prisma.courseShare.create({
-      data: {
-        courseId,
-        userId: targetUser.id
-      }
-    })
-    revalidatePath('/')
-    return { success: true }
-  } catch (err) {
-    console.error('Share error:', err)
-    return { error: 'Failed to share course' }
-  }
-}
-
-export async function getLeaderboard(courseId: string) {
-  const session = await getSession()
-  if (!session) return []
-
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    include: {
-      shares: { include: { user: true } },
-      user: true,
-      dayBlocks: { 
-        include: { items: true } 
-      }
-    }
-  })
-
-  if (!course) return []
-
-  // All users with access: owner + shared users
-  const users = [course.user, ...course.shares.map(s => s.user)]
-  
-  const leaderboardData = await Promise.all(users.map(async (u) => {
-    // Single robust query for all completed items, ordered by latest updated AND course structure
-    const progress = await prisma.itemProgress.findMany({
-      where: { 
-        userId: u.id,
-        item: { dayBlock: { courseId } },
-        completed: true 
-      },
-      include: { 
-        item: {
-          include: { dayBlock: { select: { title: true, sortOrder: true } } }
-        }
-      },
-      orderBy: [
-        { updatedAt: 'desc' },
-        { item: { dayBlock: { sortOrder: 'desc' } } },
-        { item: { sortOrder: 'desc' } }
-      ]
-    })
-
-    let totalSeconds = 0
-    progress.forEach(p => {
-      const parts = p.item.duration.split(':').map(Number)
-      if (parts.length === 2) totalSeconds += parts[0] * 60 + parts[1]
-      else if (parts.length === 3) totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2]
-    })
-
-    // The first item in the sorted progress is the latest one
-    const latestProgress = progress[0]
-    const latestVideo = latestProgress?.item.title || null
-    const latestSection = latestProgress?.item.dayBlock.title || null
-
-    return {
-      username: u.username,
-      displayName: u.displayName,
-      imageUrl: u.imageUrl,
-      totalMinutes: Math.floor(totalSeconds / 60),
-      completedCount: progress.length,
-      latestVideo,
-      latestSection
-    }
-  }))
-
-  return leaderboardData.sort((a, b) => b.totalMinutes - a.totalMinutes)
-}
-
-export async function getCourseCompetitorProgress(courseId: string) {
-  const session = await getSession()
-  if (!session) return []
-
-  // Fetch the course with all users who have access (owner + shares)
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    include: {
-      user: { select: { id: true, username: true, displayName: true, imageUrl: true } },
-      shares: { include: { user: { select: { id: true, username: true, displayName: true, imageUrl: true } } } },
-      dayBlocks: {
-        orderBy: { sortOrder: 'asc' },
-        include: {
-          items: {
-            orderBy: { sortOrder: 'asc' },
-            select: { id: true, duration: true }
-          }
-        }
-      }
-    }
-  })
-
-  if (!course) return []
-
-  const allUsers = [course.user, ...course.shares.map(s => s.user)]
-
-  const results = await Promise.all(allUsers.map(async (u) => {
-    // Fetch all item completions for this user on this course
-    const completedItemIds = new Set(
-      (await prisma.itemProgress.findMany({
-        where: {
-          userId: u.id,
-          item: { dayBlock: { courseId } },
-          completed: true,
-        },
-        select: { itemId: true }
-      })).map(p => p.itemId)
-    )
-
-    // Determine currentDayIndex and progressWithinDay
-    let currentDayIndex = course.dayBlocks.length - 1
-    let progressWithinDay = 1
-
-    for (let i = 0; i < course.dayBlocks.length; i++) {
-      const block = course.dayBlocks[i]
-      const total = block.items.length
-      if (total === 0) continue
-      const completed = block.items.filter(item => completedItemIds.has(item.id)).length
-      if (completed < total) {
-        currentDayIndex = i
-        progressWithinDay = completed / total
-        break
-      }
-    }
-
-    // score: higher = further along
-    const score = currentDayIndex + progressWithinDay
-    const isCurrentUser = u.id === session.id
-
-    return {
-      userId: u.id,
-      username: u.username,
-      displayName: u.displayName,
-      imageUrl: u.imageUrl,
-      currentDayIndex,
-      progressWithinDay,
-      score,
-      isCurrentUser,
-    }
-  }))
-
-  return results.sort((a, b) => b.score - a.score)
-}
 
 export async function updateBlockTitle(blockId: string, title: string) {
   const session = await getSession()
@@ -655,5 +459,69 @@ export async function updateBlockTitle(blockId: string, title: string) {
   })
 
   revalidatePath(`/course/${block.courseId}`)
+  return { success: true }
+}
+
+export async function getFolders() {
+  const session = await getSession()
+  if (!session) return []
+
+  return await prisma.folder.findMany({
+    where: { userId: session.id },
+    orderBy: { createdAt: 'desc' }
+  })
+}
+
+export async function createFolder(name: string) {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  const folder = await prisma.folder.create({
+    data: {
+      name,
+      userId: session.id
+    }
+  })
+
+  revalidatePath('/dashboard')
+  return folder
+}
+
+export async function deleteFolder(folderId: string) {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  // Courses in this folder will have their folderId set to null due to SetNull onDelete in schema
+  await prisma.folder.delete({
+    where: { id: folderId, userId: session.id }
+  })
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function moveCourseToFolder(courseId: string, folderId: string | null) {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  await prisma.course.update({
+    where: { id: courseId, userId: session.id },
+    data: { folderId }
+  })
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function renameFolder(folderId: string, name: string) {
+  const session = await getSession()
+  if (!session) return { error: 'Unauthorized' }
+
+  await prisma.folder.update({
+    where: { id: folderId, userId: session.id },
+    data: { name }
+  })
+
+  revalidatePath('/dashboard')
   return { success: true }
 }
