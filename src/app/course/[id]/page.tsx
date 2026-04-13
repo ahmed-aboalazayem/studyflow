@@ -39,6 +39,9 @@ export default function CourseDetailPage() {
   const { logActivity } = useActivityLog()
   const { enqueue, ToastContainer } = useXPToastQueue()
 
+  const courseId = params.id as string
+  const course = courses.find((c: any) => c.id === courseId)
+
   const handleItemToggleXP = React.useCallback((isCompleted: boolean) => {
     if (isCompleted && course) {
       const result = addXP(XP_PER_VIDEO)
@@ -53,9 +56,6 @@ export default function CourseDetailPage() {
       addXP(-XP_PER_VIDEO)
     }
   }, [addXP, XP_PER_VIDEO, enqueue, levelInfo, recordStudy, logActivity, course])
-
-  const courseId = params.id as string
-  const course = courses.find((c: any) => c.id === courseId)
   const blocks = courseDetails[courseId] || []
 
   const handleAddDay = async () => {
